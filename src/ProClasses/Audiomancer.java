@@ -1,5 +1,4 @@
-package ProClasses;
-
+package ProClasses
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseListener;
@@ -289,19 +288,33 @@ public class Audiomancer extends JPanel implements KeyListener
             	
                 x[playerID]=tempx;
             }
-    		
-    		calculateCorners(x[playerID]+24, toyU);
-    		if(topLeft || topRight)
+    		if(left)
     		{
-    			
-    			tempy = ((currRow * tileMap.getTileSize())+3);
-            }
-            else
-            {
-                tempy-=jumpSpeed;
-            }
+	    		calculateCorners(x[playerID]+24, toyU);
+	    		if(topLeft)
+	    		{
+	    			
+	    			tempy = ((currRow * tileMap.getTileSize())+3);
+	            }
+	            else
+	            {
+	                tempy-=jumpSpeed;
+	            }
+    		}
+    		if(right)
+    		{
+	    		calculateCorners(x[playerID], toyU);
+	    		if(topRight)
+	    		{
+	    			
+	    			tempy = ((currRow * tileMap.getTileSize())+3);
+	            }
+	            else
+	            {
+	                tempy-=jumpSpeed;
+	            }
+    		}
     		y[playerID]=tempy;
-    		
     	}
     	
     	if(falling)
@@ -410,7 +423,7 @@ public class Audiomancer extends JPanel implements KeyListener
     
     private void calculateCorners(int _x, int _y)
     {
-    	int leftTile = tileMap.getColTile((int) (_x - width[playerID] / 2));
+    	int leftTile = tileMap.getColTile((int) (_x + (width[playerID]/2)-6));
         int rightTile = tileMap.getColTile((int) (_x + width[playerID] / 2)-1);
         int topTile = tileMap.getRowTile((int) (_y - height[playerID] / 2));
         int bottomTile = tileMap.getRowTile((int) (_y + height[playerID] / 2)-1);
@@ -480,10 +493,10 @@ public class Audiomancer extends JPanel implements KeyListener
         
         if(left)
         {
-        	calculateCorners(toxL+24, y[animID]);
+        	calculateCorners(toxL, y[animID]);
             if(topLeft || botLeft)
             {
-            	tempx = ( ((currCol) * tileMap.getTileSize()) + (width[animID]/2)+8 );
+            	tempx = ( ((currCol+1) * tileMap.getTileSize()) - width[animID]/2+6);
             }
             else
             {
@@ -696,6 +709,7 @@ public class Audiomancer extends JPanel implements KeyListener
         
     	g.setColor(Color.GREEN);
     	g.drawRect(x[playerID], y[playerID], 32, 32);
+    	//g.drawRect(x[playerID]-xSpd-(width[playerID]/2), y[playerID], 32, 32);
     }
     
    /*public Rectangle getBounds(int ID)
