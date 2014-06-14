@@ -261,11 +261,10 @@ public class Audiomancer extends JPanel implements KeyListener
     		
     		if(inAir && left)
             {
-            	calculateCorners(toxL+15, y[playerID]);
+    			calculateCorners(toxL+24, y[playerID]);
                 if(topLeft || botLeft)
                 {
-                	System.out.println("falling "+topRight+" "+botRight);
-                	tempx = ( ((currCol) * tileMap.getTileSize()) + (width[playerID]/2) +6 );
+                	tempx = ( ((currCol) * tileMap.getTileSize()) + (width[playerID]/2)+8 );
                 }
                 else
                 {
@@ -291,7 +290,7 @@ public class Audiomancer extends JPanel implements KeyListener
                 x[playerID]=tempx;
             }
     		
-    		calculateCorners(x[playerID], toyU);
+    		calculateCorners(x[playerID]+24, toyU);
     		if(topLeft || topRight)
     		{
     			
@@ -320,11 +319,10 @@ public class Audiomancer extends JPanel implements KeyListener
     		
     		if(inAir && left)
             {
-            	calculateCorners(toxL+15, y[playerID]);
+    			calculateCorners(toxL+24, y[playerID]);
                 if(topLeft || botLeft)
                 {
-                	System.out.println("falling "+topRight+" "+botRight);
-                	tempx = ( ((currCol) * tileMap.getTileSize()) + (width[playerID]/2) +6 );
+                	tempx = ( ((currCol) * tileMap.getTileSize()) + (width[playerID]/2)+8 );
                 }
                 else
                 {
