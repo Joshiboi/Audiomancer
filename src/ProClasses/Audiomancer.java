@@ -1,12 +1,13 @@
-package ProClasses
+package ProClasses;
+
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseEvent;
-import java.awt.Image;
-import java.awt.Rectangle;
 import java.awt.*;
+
 import javax.swing.ImageIcon;
+
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -17,6 +18,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -54,18 +56,19 @@ public class Audiomancer extends JPanel implements KeyListener
     protected boolean canMove=true;
     protected boolean canShoot=true;
     protected boolean canJump=true;
-    protected boolean falling=false;
+    protected boolean falling=true;
     protected boolean jumping=false;
     protected boolean inAir=false;
     protected boolean landed=false;
     
     private double jumpSpeed=5;
     
-    protected int xSpd = 2;
+    protected int xSpd = 1;
     protected double ySpd = 1;
     protected int boltSpd=10;
     
     private boolean topLeft, topRight, botLeft, botRight;
+    private boolean topLeftLeft, topLeftTop, botLeftLeft, botLeftBot, topRightRight, topRightTop, botRightRight, botRightBot;
     
     public Audiomancer(TileMap tm)
     {
@@ -92,12 +95,14 @@ public class Audiomancer extends JPanel implements KeyListener
         int _e = e.getKeyCode();
         if(KeyEvent.VK_SHIFT == _e)
         {
-        	xSpd=10;
+        	xSpd=5;
         }
         
         if(KeyEvent.VK_D == _e)
         {
-        	if(falling || jumping){inAir=true; right=true; left=false;}
+        	if(falling || jumping){
+        		inAir=true; right=true; left=false;
+        	}
             if(canMove)
             {
                 standing=false;
@@ -233,6 +238,52 @@ public class Audiomancer extends JPanel implements KeyListener
     }
     public void keyTyped(KeyEvent e){}
     
+    public int checkLRCollisions (int animID, int tempx, int currCol) {
+    	int toxL = x[animID] - xSpd;
+        int toxR = x[animID] + xSpd;
+        
+    	/*try {
+			Thread.sleep(250);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}*/
+    	
+    	if(left) {
+    		calculateCorners(toxL, y[animID]);
+        	
+        	// System.out.println("funcL TLL: " + topLeftLeft + ", BLL: " + botLeftLeft + ", TLT: " + topLeftTop + ", BLB: " + botLeftBot);
+        	
+            if (botLeftLeft || topLeftLeft) // if(topLeft || botLeft)
+            {
+            	// tempx = ( ((currCol+1) * tileMap.getTileSize()) - width[animID]/2+6);
+            	// tempx = ( ((currCol) * tileMap.getTileSize()) - (width[animID]/2) + 6);
+            	tempx = ( ((currCol) * tileMap.getTileSize()));
+            }
+            else
+            {
+            	tempx -=xSpd;
+            }
+        }
+    	if (right) {
+        	calculateCorners(toxR, y[animID]);
+        	
+        	// System.out.println("funcR TLL: " + topLeftLeft + ", BLL: " + botLeftLeft + ", TLT: " + topLeftTop + ", BLB: " + botLeftBot);
+        	
+            if (topRightRight || botRightRight) // if(topLeft || botLeft)
+            {
+            	// tempx = ( ((currCol+1) * tileMap.getTileSize()) - width[animID]/2+6);
+            	// tempx = ( ((currCol) * tileMap.getTileSize()) - (width[animID]/2) + 6);
+            	tempx = ( ((currCol) * tileMap.getTileSize()));
+            }
+            else
+            {
+            	tempx +=xSpd;
+            }
+        }
+    	
+    	return tempx;
+    }
+    
     public void update()
     {
     	int currRow = tileMap.getRowTile(y[playerID]);
@@ -258,6 +309,23 @@ public class Audiomancer extends JPanel implements KeyListener
     			falling=true;
     		}
     		
+    		if (inAir) {
+    			tempx = checkLRCollisions(playerID, tempx, currCol);
+    		}
+    		x[playerID]=tempx;
+    		
+    		calculateCorners(x[playerID], toyU);
+    		if(topRight || topLeft)
+    		{
+    			
+    			tempy = ((currRow * tileMap.getTileSize())+3);
+            }
+            else
+            {
+                tempy-=jumpSpeed;
+            }
+    		
+    		/*
     		if(inAir && left)
             {
     			calculateCorners(toxL+24, y[playerID]);
@@ -314,6 +382,9 @@ public class Audiomancer extends JPanel implements KeyListener
 	                tempy-=jumpSpeed;
 	            }
     		}
+    		*/
+    		
+    		tempy -= jumpSpeed;
     		y[playerID]=tempy;
     	}
     	
@@ -327,9 +398,28 @@ public class Audiomancer extends JPanel implements KeyListener
     		canShoot=false;
     		canJump=false;
     		standing=false;
+    		
     		y[playerID]+=ySpd;
     		ySpd+=0.25;
     		
+    		if (inAir) {
+    			tempx = checkLRCollisions(playerID, tempx, currCol);
+    		}
+    		x[playerID]=tempx;
+    		
+    		calculateCorners(x[playerID], toyU);
+    		if(topRight || topLeft)
+    		{
+    			
+    			tempy = ((currRow * tileMap.getTileSize())+3);
+            }
+            else
+            {
+                tempy-=jumpSpeed;
+            }
+    		
+    		
+    		/*
     		if(inAir && left)
             {
     			calculateCorners(toxL+24, y[playerID]);
@@ -360,24 +450,14 @@ public class Audiomancer extends JPanel implements KeyListener
             	
                 x[playerID]=tempx;
             }
+            */
             
             calculateCorners(x[playerID], toyD);
-            if(right)
-            {
-            	if(botLeft)
-            	{
-            		tempy = ((currRow + 1) * tileMap.getTileSize() - (height[playerID] / 2))-16;
-            		landed=true;
-            	}
-            }
-            if(left)
-            {
-            	if(botRight)
-            	{
-            		tempy = ((currRow + 1) * tileMap.getTileSize() - (height[playerID] / 2))-16;
-            		landed=true;
-            	}
-            }
+        	if(botLeft || botRight)
+        	{
+        		tempy = ((currRow + 1) * tileMap.getTileSize() - (height[playerID] / 2))-16;
+        		landed=true;
+        	}
     	}
     	
     	if(landed)
@@ -423,17 +503,64 @@ public class Audiomancer extends JPanel implements KeyListener
     
     private void calculateCorners(int _x, int _y)
     {
+    	topLeftLeft = false;
+    	topLeftTop = false;
+    	botLeftLeft = false;
+    	botLeftBot = false;
+    	topRightRight = false;
+    	topRightTop = false;
+    	botRightRight = false;
+    	botRightBot = false;
+    	
+    	/*
     	int leftTile = tileMap.getColTile((int) (_x + (width[playerID]/2)-6));
         int rightTile = tileMap.getColTile((int) (_x + width[playerID] / 2)-1);
-        int topTile = tileMap.getRowTile((int) (_y - height[playerID] / 2));
+        int topTile = tileMap.getRowTile((int) (_y + height[playerID] / 2));
         int bottomTile = tileMap.getRowTile((int) (_y + height[playerID] / 2)-1);
+        */
+    	
+    	/*
+    	int leftTile = tileMap.getColTile((int) (_x + (width[playerID]/2)-6));
+        int rightTile = tileMap.getColTile((int) (_x + 31 - width[playerID] / 2 + 1));
+        int topTile = tileMap.getRowTile((int) (_y));
+        int bottomTile = tileMap.getRowTile((int) (_y + 31));
+        */
+        
+    	int leftTile = tileMap.getColTile((int) (_x));
+        int rightTile = tileMap.getColTile((int) (_x + width[playerID] - xSpd));
+        int topTile = tileMap.getRowTile((int) (_y));
+        int bottomTile = tileMap.getRowTile((int) (_y + height[playerID] - 1));
         
         topLeft = tileMap.getTile(topTile, leftTile) == 0;
         topRight = tileMap.getTile(topTile, rightTile) == 0;
         botLeft = tileMap.getTile(bottomTile, leftTile) == 0;
         botRight = tileMap.getTile(bottomTile, rightTile) == 0;
         
+        // System.out.println((tileMap.getColTile(x[playerID]) * tileMap.getTileSize()) - (leftTile * tileMap.getTileSize()) + " " + topLeft + " " + botLeft);
         
+        if (topLeft && (leftTile * tileMap.getTileSize() < tileMap.getColTile(x[playerID]) * tileMap.getTileSize())) {
+        	topLeftLeft = true;
+        } else if (topLeft){
+        	topLeftTop = true;
+        }
+        
+        if (botLeft && (leftTile * tileMap.getTileSize() < tileMap.getColTile(x[playerID]) * tileMap.getTileSize())) {
+        	botLeftLeft = true;
+        } else if (botLeft){
+        	botLeftBot = true;
+        }
+        
+        if (topRight && (rightTile * tileMap.getTileSize() > tileMap.getColTile(x[playerID]) * tileMap.getTileSize())) {
+        	topRightRight = true;
+        } else if (topLeft){
+        	topRightTop = true;
+        }
+        
+        if (botRight && (rightTile * tileMap.getTileSize() > tileMap.getColTile(x[playerID]) * tileMap.getTileSize())) {
+        	botRightRight = true;
+        } else if (botLeft){
+        	botRightBot = true;
+        }
     }
     
     public void stand(Graphics g, int current)
@@ -466,10 +593,12 @@ public class Audiomancer extends JPanel implements KeyListener
     	int animID=playerID;
         int animFrames=8;
         
-        int toxL = x[animID] - xSpd;
-        int toxR = x[animID] + xSpd;
+        // int toxL = x[animID] - xSpd;
+        // int toxR = x[animID] + xSpd;
         
         int currCol = tileMap.getColTile(x[animID]);
+        
+        System.out.println("walkin" + currCol);
         
         int tempx = x[animID];
         
@@ -490,13 +619,22 @@ public class Audiomancer extends JPanel implements KeyListener
             walkingRight[i] = walkingRightImages[i].getImage();
         }
         
+        tempx = checkLRCollisions(animID, tempx, currCol);
+        x[animID]=tempx;
+        g2d.drawImage(walkingRight[current],x[animID],y[animID],this);
         
+        /*
         if(left)
         {
         	calculateCorners(toxL, y[animID]);
-            if(topLeft || botLeft)
+        	
+        	System.out.println("TLL: " + topLeftLeft + ", BLL: " + botLeftLeft + ", TLT: " + topLeftTop + ", BLB: " + botLeftBot);
+        	
+            if (botLeftLeft || topLeftLeft) // if(topLeft || botLeft)
             {
-            	tempx = ( ((currCol+1) * tileMap.getTileSize()) - width[animID]/2+6);
+            	// tempx = ( ((currCol+1) * tileMap.getTileSize()) - width[animID]/2+6);
+            	// tempx = ( ((currCol) * tileMap.getTileSize()) - (width[animID]/2) + 6);
+            	tempx = ( ((currCol) * tileMap.getTileSize()));
             }
             else
             {
@@ -513,17 +651,17 @@ public class Audiomancer extends JPanel implements KeyListener
         	if(topRight || botRight)
         	{
         		System.out.println(topRight+" "+botRight);
-        		tempx = ((currCol+1) * tileMap.getTileSize() - (width[animID]/2)-6);
+        		// tempx = ((currCol+1) * tileMap.getTileSize() - (width[animID]/2)-6);
+        		tempx = ((currCol) * tileMap.getTileSize() - (width[animID]/2)-6);
         	}
         	else
         	{
         		tempx +=xSpd;
         	}
-        	
-            x[animID]=tempx;
-            g2d.drawImage(walkingRight[current],x[animID],y[animID],this);
+        	x[animID]=tempx;
+            g2d.drawImage(walkingRight[current],x[animID],y[animID],this);            
         }
-        
+    	*/        
     }
     
     public void character_shoot(Graphics g, int current)
@@ -706,9 +844,8 @@ public class Audiomancer extends JPanel implements KeyListener
     
     public void drawBox(Graphics g)
     {
-        
     	g.setColor(Color.GREEN);
-    	g.drawRect(x[playerID], y[playerID], 32, 32);
+    	g.drawRect(x[playerID], y[playerID], 31, 31);
     	//g.drawRect(x[playerID]-xSpd-(width[playerID]/2), y[playerID], 32, 32);
     }
     
@@ -720,6 +857,7 @@ public class Audiomancer extends JPanel implements KeyListener
     public int getY(int ID){return y[ID];}
     public void setX(int i, int ID){x[ID]=i;}
     public void setY(int i, int ID){y[ID]=i;}
+    
     public boolean walking(){return(walk);}
     public boolean characterShooting(){return(characterShoot);}
     public boolean shooting(){return(shoot);}
@@ -730,6 +868,7 @@ public class Audiomancer extends JPanel implements KeyListener
     public boolean characterStanding(){return(standing);}
     public boolean isFalling(){return falling;}
     public boolean isJumping(){return jumping;}
+    
     public void setCanShoot(boolean i){canShoot=i;}
     public void setShooting(boolean i){shoot=i;}
     public void setCharacterShooting(boolean i){characterShoot=i;}
