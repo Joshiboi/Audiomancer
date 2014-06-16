@@ -1,4 +1,4 @@
-package ProClasses;
+package ProClasses
 
 import java.awt.Font;
 import java.awt.Graphics;
@@ -36,7 +36,7 @@ public class Board extends JPanel implements ActionListener
     private int[] current;
     private boolean[] wait;
     
-    private static int width, height;
+    protected static int width, height;
     
     public Board()
     {
@@ -77,7 +77,6 @@ public class Board extends JPanel implements ActionListener
             frames=0;
         }
         frames++;
-        audiomancer.update();
         if(!audiomancer.isFalling())
         {
         	current[6]=0;
@@ -126,7 +125,8 @@ public class Board extends JPanel implements ActionListener
         {
         	audiomancer_jumping(g);
         }
-        audiomancer.drawBox(g);
+       // audiomancer.drawBox(g);
+        g.drawString(""+fps, 35, 67);
     }
     
     public void audiomancer_stand(Graphics g)
@@ -358,3 +358,4 @@ public class Board extends JPanel implements ActionListener
         public void keyTyped(KeyEvent e){}
     }
 }
+
