@@ -289,6 +289,8 @@ public class Audiomancer extends JPanel implements KeyListener
     	int currRow = tileMap.getRowTile(y[playerID]);
     	int currCol = tileMap.getColTile(x[playerID]);
     	
+    	
+    	
     	int toxL = x[playerID] - (int)xSpd;
         int toxR = x[playerID] + (int)xSpd;
         
@@ -301,7 +303,7 @@ public class Audiomancer extends JPanel implements KeyListener
     	
     	if(jumping)
     	{
-    		System.out.println("jumping");
+    		System.out.println("jumpin. Col: " + currCol + ", row: " + currRow);
     		jumpSpeed-=0.2;
     		if(jumpSpeed<=0)
     		{
@@ -314,82 +316,58 @@ public class Audiomancer extends JPanel implements KeyListener
     		}
     		x[playerID]=tempx;
     		
-    		calculateCorners(x[playerID], toyU);
-    		if(topRight || topLeft)
+    		/*calculateCorners(x[playerID], toyU);
+    		if(topRightTop || topLeftTop)
     		{
     			
-    			tempy = ((currRow * tileMap.getTileSize())+3);
+    			tempy = ((currRow * tileMap.getTileSize()));
             }
             else
             {
                 tempy-=jumpSpeed;
-            }
+            }*/
     		
-    		/*
-    		if(inAir && left)
-            {
-    			calculateCorners(toxL+24, y[playerID]);
-                if(topLeft || botLeft)
-                {
-                	tempx = ( ((currCol) * tileMap.getTileSize()) + (width[playerID]/2)+8 );
-                }
-                else
-                {
-                	tempx -=xSpd;
-                }
-                
-                x[playerID]=tempx;
-            }
-            
-            if(inAir && right)
-            {
-            	calculateCorners(toxR+6, y[playerID]);
-            	if(topRight || botRight)
-            	{
-            		System.out.println("falling "+topRight+" "+botRight);
-            		tempx = ((currCol+1) * tileMap.getTileSize() - (width[playerID]/2)-6);
-            	}
-            	else
-            	{
-            		tempx +=xSpd;
-            	}
-            	
-                x[playerID]=tempx;
-            }
-    		if(left)
-    		{
-	    		calculateCorners(x[playerID]+24, toyU);
-	    		if(topLeft)
-	    		{
-	    			
-	    			tempy = ((currRow * tileMap.getTileSize())+3);
-	            }
-	            else
-	            {
-	                tempy-=jumpSpeed;
-	            }
-    		}
     		if(right)
     		{
-	    		calculateCorners(x[playerID], toyU);
-	    		if(topRight)
-	    		{
-	    			
-	    			tempy = ((currRow * tileMap.getTileSize())+3);
-	            }
-	            else
-	            {
-	                tempy-=jumpSpeed;
-	            }
+    			System.out.println(topLeft + " " + topRight + " " + botLeft + " " + botRight);
+    			System.out.println("R "+currRow+" "+topRightTop+" "+topLeftTop+" "+topRightRight+" "+botRightRight);
+    			calculateCorners(x[playerID]+xSpd, toyU);
+    			if(topLeftTop || topRightTop)
+    			{
+    				System.out.println("top collision "+currRow+" "+topRightTop+" "+topLeftTop);
+    				tempy = ((currRow) * tileMap.getTileSize());
+    				falling=true;
+    				jumping=false;
+    			}
+    			else
+    			{
+    				tempy-=jumpSpeed;
+    			}
     		}
-    		*/
+    		if(left)
+    		{
+    			calculateCorners(x[playerID]-xSpd, toyU);
+    			if(topLeftTop || topRightTop)
+    			{
+    				
+    				System.out.println("top collision "+currRow+" "+topRightTop+" "+topLeftTop);
+    				tempy = ((currRow) * tileMap.getTileSize());
+    				falling=true;
+    				jumping=false;
+    			}
+    			else
+    			{
+    				tempy-=jumpSpeed;
+    			}
+    		}
     		
-    		tempy -= jumpSpeed;
-    		y[playerID]=tempy;
+    	      
+    	    y[playerID]=tempy;
     	}
     	
     	if(falling)
     	{
+    		
     		System.out.println("falling");
     		characterShoot=false;
     		walk=false;
@@ -402,21 +380,7 @@ public class Audiomancer extends JPanel implements KeyListener
     		y[playerID]+=ySpd;
     		ySpd+=0.25;
     		
-    		if (inAir) {
-    			tempx = checkLRCollisions(playerID, tempx, currCol);
-    		}
-    		x[playerID]=tempx;
     		
-    		calculateCorners(x[playerID], toyU);
-    		if(topRight || topLeft)
-    		{
-    			
-    			tempy = ((currRow * tileMap.getTileSize())+3);
-            }
-            else
-            {
-                tempy-=jumpSpeed;
-            }
     		
     		
     		/*
@@ -457,6 +421,23 @@ public class Audiomancer extends JPanel implements KeyListener
         	{
         		tempy = ((currRow + 1) * tileMap.getTileSize() - (height[playerID] / 2))-16;
         		landed=true;
+        	}
+        	else {
+        		if (inAir) {
+        			tempx = checkLRCollisions(playerID, tempx, currCol);
+        		}
+        		x[playerID]=tempx;
+        		
+        		calculateCorners(x[playerID], toyU);
+        		if(topRight || topLeft)
+        		{
+        			
+        			tempy = ((currRow * tileMap.getTileSize())+3);
+                }
+                else
+                {
+                    tempy-=jumpSpeed;
+                }
         	}
     	}
     	
@@ -529,7 +510,7 @@ public class Audiomancer extends JPanel implements KeyListener
     	int leftTile = tileMap.getColTile((int) (_x));
         int rightTile = tileMap.getColTile((int) (_x + width[playerID] - xSpd));
         int topTile = tileMap.getRowTile((int) (_y));
-        int bottomTile = tileMap.getRowTile((int) (_y + height[playerID] - 1));
+        int bottomTile = tileMap.getRowTile((int) (_y + height[playerID] - ySpd));
         
         topLeft = tileMap.getTile(topTile, leftTile) == 0;
         topRight = tileMap.getTile(topTile, rightTile) == 0;
@@ -551,15 +532,15 @@ public class Audiomancer extends JPanel implements KeyListener
         }
         
         if (topRight && (rightTile * tileMap.getTileSize() > tileMap.getColTile(x[playerID]) * tileMap.getTileSize())) {
-        	topRightRight = true;
-        } else if (topLeft){
         	topRightTop = true;
+        } else if (topRight){
+        	topRightRight = true;
         }
         
         if (botRight && (rightTile * tileMap.getTileSize() > tileMap.getColTile(x[playerID]) * tileMap.getTileSize())) {
-        	botRightRight = true;
-        } else if (botLeft){
         	botRightBot = true;
+        } else if (botRight){
+        	botRightRight = true;
         }
     }
     
