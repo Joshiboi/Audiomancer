@@ -1,4 +1,5 @@
-package ProClasses;
+package ProClasses
+
 
 import java.awt.Font;
 import java.awt.Graphics;
@@ -81,6 +82,10 @@ public class Board extends JPanel implements ActionListener
         {
         	current[6]=0;
         }
+        
+        tileMap.setX(Board.width/2 - audiomancer.getX(0));
+        tileMap.setY(Board.height/2 - audiomancer.getY(0));
+        
         repaint();
     }
     
