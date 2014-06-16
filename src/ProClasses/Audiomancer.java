@@ -319,7 +319,7 @@ public class Audiomancer extends JPanel implements KeyListener
     	
     	return tempx;
     }
-    
+
     private void calculateCorners(int _x, int _y)
     {
     	topLeftLeft = false;
@@ -409,8 +409,8 @@ public class Audiomancer extends JPanel implements KeyListener
             	landed=false;
     		}
         }
-        if(left){g2d.drawImage(standingLeft[current],x[animID],y[animID],this);}
-        if(right){g2d.drawImage(standingRight[current],x[animID],y[animID],this);}
+        if(left){g2d.drawImage(standingLeft[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
+        if(right){g2d.drawImage(standingRight[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
     }
     
     public void walk(Graphics g, int current)
@@ -466,8 +466,8 @@ public class Audiomancer extends JPanel implements KeyListener
     	
         tempx = checkLRCollisions(animID, tempx, currCol);
         x[animID]=tempx;
-        if(right){g2d.drawImage(walkingRight[current],x[animID],y[animID],this);}
-        if(left){g2d.drawImage(walkingLeft[current],x[animID],y[animID],this);}
+        if(right){g2d.drawImage(walkingRight[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
+        if(left){g2d.drawImage(walkingLeft[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
     }
     
     public void character_shoot(Graphics g, int current)
@@ -498,11 +498,11 @@ public class Audiomancer extends JPanel implements KeyListener
             
         if(left)
         {
-            g2d.drawImage(shootingLeft[current],x[animID],y[animID],this);
+            g2d.drawImage(shootingLeft[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);
         }
         if(right)
         {
-            g2d.drawImage(shootingRight[current],x[animID],y[animID],this);
+            g2d.drawImage(shootingRight[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);
         }
     }
     
@@ -531,7 +531,7 @@ public class Audiomancer extends JPanel implements KeyListener
                 shootLeft=false;
                 canShoot=true;
             }
-            g2d.drawImage(bolt[current],x[animID],y[animID],this);
+            g2d.drawImage(bolt[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);
         }
         
         if(shootRight)
@@ -543,7 +543,7 @@ public class Audiomancer extends JPanel implements KeyListener
                 shootRight=false;
                 canShoot=true;
             }
-            g2d.drawImage(bolt[current],x[animID],y[animID],this);
+            g2d.drawImage(bolt[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);
         }
     }
     
@@ -569,8 +569,8 @@ public class Audiomancer extends JPanel implements KeyListener
             shockwaveLeft[i] = shockwaveLeftImages[i].getImage();
         }
         
-        if(right){g2d.drawImage(shockwaveRight[current],x[animID],y[animID],this);}
-        if(left){g2d.drawImage(shockwaveLeft[current],x[animID],y[animID],this);}
+        if(right){g2d.drawImage(shockwaveRight[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
+        if(left){g2d.drawImage(shockwaveLeft[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
     }
     
     public void shockwave(Graphics g, int current)
@@ -588,14 +588,13 @@ public class Audiomancer extends JPanel implements KeyListener
             shockwave[i] = shockwaveImages[i].getImage();
         }
         
-        g2d.drawImage(shockwave[current],x[animID],y[animID],this);
+        g2d.drawImage(shockwave[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);
     }
     
     public void falling(Graphics g, int current)
     {
     	int animID=playerID;
         int animFrames=6;
-        
     	int currRow = tileMap.getRowTile(y[animID]);
     	int currCol = tileMap.getColTile(x[animID]);
         int tempx = x[animID];
@@ -649,8 +648,8 @@ public class Audiomancer extends JPanel implements KeyListener
     		x[animID]=tempx;
     	}
         
-        if(right){g2d.drawImage(fallingRight[current],x[animID],y[animID],this);}
-        if(left){g2d.drawImage(fallingLeft[current],x[animID],y[animID],this);}
+        if(right){g2d.drawImage(fallingRight[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
+        if(left){g2d.drawImage(fallingLeft[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
         
         if(landed)
     	{
@@ -738,8 +737,8 @@ public class Audiomancer extends JPanel implements KeyListener
 	      
 	    y[animID]=tempy;
 	
-        if(right){g2d.drawImage(jumpingRight[current],x[animID],y[animID],this);}
-        if(left){g2d.drawImage(jumpingLeft[current],x[animID],y[animID],this);}
+        if(right){g2d.drawImage(jumpingRight[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
+        if(left){g2d.drawImage(jumpingLeft[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
     
     }
     
