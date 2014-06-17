@@ -1,4 +1,4 @@
-package ProClasses
+package ProClasses;
 
 
 import java.awt.Font;
@@ -83,12 +83,28 @@ public class Board extends JPanel implements ActionListener
         	current[6]=0;
         }
         
-        tileMap.setX(Board.width/2 - audiomancer.getX(0));
-        tileMap.setY(Board.height/2 - audiomancer.getY(0));
+        tileMap.setX(width/2 - audiomancer.getX(0));
+        tileMap.setY(height/2 - audiomancer.getY(0));
         
         repaint();
     }
     
+    
+    public boolean isColliding(Rectangle _r1, Rectangle _r2)
+    {
+        Rectangle r1=_r1;
+        Rectangle r2=_r2;
+        
+        if(r1.intersects(r2))
+        {
+        	return true;
+        }
+        else
+        {
+        	return false;
+        }
+        
+    }
     
 
     public void paintComponent(Graphics g)
@@ -130,7 +146,7 @@ public class Board extends JPanel implements ActionListener
         {
         	audiomancer_jumping(g);
         }
-       // audiomancer.drawBox(g);
+        //audiomancer.drawBox(g);
         g.drawString(""+fps, 35, 67);
     }
     
