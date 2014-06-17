@@ -64,10 +64,11 @@ public class Audiomancer extends JPanel implements KeyListener
     protected boolean inAirLeft=false;
     protected boolean inAirRight=false;
     protected boolean speed=false;
+    protected boolean[] colliding;
     
     private double jumpSpeed;
-    protected int xSpd=3;
-    protected double ySpd;
+    protected int[] xSpd;
+    protected double[] ySpd;
     protected int defaultYSpd=1;
     protected int defaultJumpSpeed=5;
     protected int boltSpd=10;
@@ -80,22 +81,26 @@ public class Audiomancer extends JPanel implements KeyListener
     	tileMap = tm;
     	
     	animationCount=10;
+    	ySpd = new double[animationCount];
+    	xSpd = new int[animationCount];
         x = new int[animationCount];
         y = new int[animationCount];
         width = new int[animationCount];
         height = new int[animationCount];
+        colliding = new boolean[animationCount];
         
-        ySpd = defaultYSpd;
+        xSpd[playerID]=3;
+        xSpd[boltID]=10;
+        ySpd[playerID] = defaultYSpd;
         jumpSpeed = defaultJumpSpeed;
         
         for(int i=0;i<animationCount;i++)
         {
+        	colliding[i]=false;
 	        x[i]=640;
 	        y[i]=(720/2);
         }
         
-        width[playerID]=32;
-        height[playerID]=32;
     }
     
     public void keyPressed(KeyEvent e)
@@ -110,7 +115,7 @@ public class Audiomancer extends JPanel implements KeyListener
         if(KeyEvent.VK_SHIFT == _e)
         {
         	boltSpd=20;
-        	xSpd=10;
+        	xSpd[playerID]=10;
         	speed=true;
         }
         
@@ -237,7 +242,7 @@ public class Audiomancer extends JPanel implements KeyListener
         if(KeyEvent.VK_SHIFT == _e)
         {
         	boltSpd=10;
-        	xSpd=3;
+        	xSpd[playerID]=3;
         	speed=false;
         }
         if(KeyEvent.VK_D == _e)
@@ -275,8 +280,8 @@ public class Audiomancer extends JPanel implements KeyListener
     }
     public void keyTyped(KeyEvent e){}
     public int checkLRCollisions (int animID, int tempx, int currCol) {
-    	int toxL = x[animID] - xSpd;
-        int toxR = x[animID] + xSpd;
+    	int toxL = x[animID] - xSpd[animID];
+        int toxR = x[animID] + xSpd[animID];
         
     	/*try {
 			Thread.sleep(250);
@@ -285,7 +290,7 @@ public class Audiomancer extends JPanel implements KeyListener
 		}*/
     	
     	if(left) {
-    		calculateCorners(toxL, y[animID]);
+    		calculateCorners(toxL, y[animID], animID);
         	
         	// System.out.println("funcL TLL: " + topLeftLeft + ", BLL: " + botLeftLeft + ", TLT: " + topLeftTop + ", BLB: " + botLeftBot);
         	
@@ -294,14 +299,16 @@ public class Audiomancer extends JPanel implements KeyListener
             	// tempx = ( ((currCol+1) * tileMap.getTileSize()) - width[animID]/2+6);
             //	tempx = ( ((currCol) * tileMap.getTileSize()) - (width[animID]/2) + 6);
             	tempx = ( ((currCol) * tileMap.getTileSize()));
+            	colliding[animID]=true;
             }
             else
             {
-            	tempx -=xSpd;
+            	tempx -=xSpd[animID];
+            	colliding[animID]=false;
             }
         }
     	if (right) {
-        	calculateCorners(toxR, y[animID]);
+        	calculateCorners(toxR, y[animID], animID);
         	
         	// System.out.println("funcR TLL: " + topLeftLeft + ", BLL: " + botLeftLeft + ", TLT: " + topLeftTop + ", BLB: " + botLeftBot);
         	
@@ -310,17 +317,19 @@ public class Audiomancer extends JPanel implements KeyListener
             	// tempx = ( ((currCol+1) * tileMap.getTileSize()) - width[animID]/2+6);
             	// tempx = ( ((currCol) * tileMap.getTileSize()) + (width[animID]/2)-6);
             	tempx = ( ((currCol) * tileMap.getTileSize()));
+            	colliding[animID]=true;
             }
             else
             {
-            	tempx +=xSpd;
+            	tempx +=xSpd[animID];
+            	colliding[animID]=false;
             }
         }
     	
     	return tempx;
     }
 
-    private void calculateCorners(int _x, int _y)
+    private void calculateCorners(int _x, int _y, int animID)
     {
     	topLeftLeft = false;
     	topLeftTop = false;
@@ -336,38 +345,38 @@ public class Audiomancer extends JPanel implements KeyListener
     	
     	
     	int leftTile = tileMap.getColTile((int) (_x));
-        int rightTile = tileMap.getColTile((int) (_x +width[playerID])-xSpd);
+        int rightTile = tileMap.getColTile((int) (_x +width[animID])-xSpd[animID]);
         int topTile = tileMap.getRowTile((int) (_y));
-        int bottomTile = tileMap.getRowTile((int) (_y +height[playerID])-(int)ySpd);
+        int bottomTile = tileMap.getRowTile((int) (_y +height[animID])-(int)ySpd[animID]);
         
-        topLeft = tileMap.getTile(topTile, leftTile) == 0;
-        topRight = tileMap.getTile(topTile, rightTile) == 0;
-        botLeft = tileMap.getTile(bottomTile, leftTile) == 0;
-        botRight = tileMap.getTile(bottomTile, rightTile) == 0;
-        
-        
+        topLeft = tileMap.getTile(topTile, leftTile) == 0 || tileMap.getTile(topTile, leftTile) == 2 || tileMap.getTile(topTile, leftTile) == 3 || tileMap.getTile(topTile, leftTile) == 4 || tileMap.getTile(topTile, leftTile) == 5 || tileMap.getTile(topTile, leftTile) == 6;
+        topRight = tileMap.getTile(topTile, rightTile) == 0 || tileMap.getTile(topTile, rightTile) == 2 || tileMap.getTile(topTile, rightTile) == 3 || tileMap.getTile(topTile, rightTile) == 4 || tileMap.getTile(topTile, rightTile) == 5 || tileMap.getTile(topTile, rightTile) == 6;
+        botLeft = tileMap.getTile(bottomTile, leftTile) == 0 || tileMap.getTile(bottomTile, leftTile) == 2 || tileMap.getTile(bottomTile, leftTile) == 3 || tileMap.getTile(bottomTile, leftTile) == 4 || tileMap.getTile(bottomTile, leftTile) == 5 || tileMap.getTile(bottomTile, leftTile) == 6;
+        botRight = tileMap.getTile(bottomTile, rightTile) == 0 || tileMap.getTile(bottomTile, rightTile) == 2 || tileMap.getTile(bottomTile, rightTile) == 3 || tileMap.getTile(bottomTile, rightTile) == 4 || tileMap.getTile(bottomTile, rightTile) == 5 || tileMap.getTile(bottomTile, rightTile) == 6;
         
         
         
-        if (topLeft && (leftTile * tileMap.getTileSize() < tileMap.getColTile(x[playerID]) * tileMap.getTileSize())) {
+        
+        
+        if (topLeft && (leftTile * tileMap.getTileSize() < tileMap.getColTile(x[animID]) * tileMap.getTileSize())) {
         	topLeftLeft = true;
         } else if (topLeft){
         	topLeftTop = true;
         }
         
-        if (botLeft && (leftTile * tileMap.getTileSize() < tileMap.getColTile(x[playerID]) * tileMap.getTileSize())) {
+        if (botLeft && (leftTile * tileMap.getTileSize() < tileMap.getColTile(x[animID]) * tileMap.getTileSize())) {
         	botLeftLeft = true;
         } else if (botLeft){
         	botLeftBot = true;
         }
         
-        if (topRight && (rightTile * tileMap.getTileSize() > tileMap.getColTile(x[playerID]) * tileMap.getTileSize())) {
+        if (topRight && (rightTile * tileMap.getTileSize() > tileMap.getColTile(x[animID]) * tileMap.getTileSize())) {
         	topRightRight = true;
         } else if (topRight){
         	topRightTop = true;
         }
         
-        if (botRight && (rightTile * tileMap.getTileSize() > tileMap.getColTile(x[playerID]) * tileMap.getTileSize())) {
+        if (botRight && (rightTile * tileMap.getTileSize() > tileMap.getColTile(x[animID]) * tileMap.getTileSize())) {
         	botRightRight = true;
         } else if (botRight){
         	botRightBot = true;
@@ -380,7 +389,7 @@ public class Audiomancer extends JPanel implements KeyListener
     {
     	int animID=playerID;
         int animFrames=2;
-        int toyD = y[animID] + (int)ySpd;
+        int toyD = y[animID] + (int)ySpd[animID];
         
         Image[] standingRight = new Image[animFrames];
         ImageIcon[] standingRightImages = new ImageIcon[animFrames];
@@ -399,10 +408,13 @@ public class Audiomancer extends JPanel implements KeyListener
             standingLeft[i] = standingLeftImages[i].getImage();
         }
         
-        calculateCorners(x[animID]+xSpd, toyD);
+        width[animID] = standingLeft[animFrames-1].getWidth(null);
+        height[animID] = standingLeft[animFrames-1].getHeight(null);
+        
+        calculateCorners(x[animID]+xSpd[animID], toyD, animID);
     	if(!botLeft)
         {
-    		calculateCorners(x[animID]-xSpd, toyD);
+    		calculateCorners(x[animID]-xSpd[animID], toyD, animID);
     		if(!botRight)
     		{
     			falling=true;
@@ -419,7 +431,7 @@ public class Audiomancer extends JPanel implements KeyListener
         if(Apressed && !Dpressed){left=true; right=false;}
     	int animID=playerID;
         int animFrames=8;
-        int toyD = y[animID] + (int)ySpd;
+        int toyD = y[animID] + (int)ySpd[animID];
         
         // int toxL = x[animID] - xSpd;
         // int toxR = x[animID] + xSpd;
@@ -447,13 +459,16 @@ public class Audiomancer extends JPanel implements KeyListener
             walkingRight[i] = walkingRightImages[i].getImage();
         }
         
+        width[animID] = walkingLeft[animFrames-1].getWidth(null);
+        height[animID] = walkingLeft[animFrames-1].getHeight(null);
+        
         if(Dpressed && !Apressed){right=true; left=false;}
         if(Apressed && !Dpressed){left=true; right=false;}
         
-        calculateCorners(x[animID]+xSpd, toyD);
+        calculateCorners(x[animID]+xSpd[animID], toyD, animID);
     	if(!botLeft)
         {
-    		calculateCorners(x[animID]-xSpd, toyD);
+    		calculateCorners(x[animID]-xSpd[animID], toyD, animID);
     		if(!botRight)
     		{
     			falling=true;
@@ -490,7 +505,8 @@ public class Audiomancer extends JPanel implements KeyListener
             shootingRightImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Spell/audiomancer_spell_right_"+(i+1)+".png"));
             shootingRight[i] = shootingRightImages[i].getImage();
         }
-        
+        width[animID] = shootingLeft[animFrames-1].getWidth(null);
+        height[animID] = shootingLeft[animFrames-1].getHeight(null);
         if(current==8)
         {
             shoot=true;
@@ -510,41 +526,33 @@ public class Audiomancer extends JPanel implements KeyListener
     {
     	int animID=boltID;
         int animFrames=2;
-        
+        int tempx = x[animID];
+        int currCol = tileMap.getColTile(x[animID]);
         Image[] bolt = new Image[animFrames];
         ImageIcon[] boltImages = new ImageIcon[animFrames];
         Graphics2D g2d = (Graphics2D) g;
+        
+        if(colliding[animID] || colliding[playerID])
+        {
+        	System.out.println("collided");
+        	shoot=false;
+            shootLeft=false;
+            shootRight=false;
+            canShoot=true;
+        }
         
         for(int i=0;i<animFrames;i++)
         {
             boltImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Spell Effect/bolt_"+(i+1)+".png"));
             bolt[i] = boltImages[i].getImage();
         }
+        width[animID] = width[playerID]-10;
+        height[animID] = height[playerID]-10;
         
+        tempx = checkLRCollisions(animID, tempx, currCol);
+        x[animID]=tempx;
         
-        if(shootLeft)
-        {
-            x[animID]-=boltSpd;
-            if(x[animID]<=5)
-            {
-                shoot=false;
-                shootLeft=false;
-                canShoot=true;
-            }
-            g2d.drawImage(bolt[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);
-        }
-        
-        if(shootRight)
-        {
-            x[animID]+=boltSpd;
-            if(x[animID]>=1200)
-            {
-                shoot=false;
-                shootRight=false;
-                canShoot=true;
-            }
-            g2d.drawImage(bolt[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);
-        }
+        g2d.drawImage(bolt[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);
     }
     
     public void character_shockwave(Graphics g, int current)
@@ -569,6 +577,9 @@ public class Audiomancer extends JPanel implements KeyListener
             shockwaveLeft[i] = shockwaveLeftImages[i].getImage();
         }
         
+        width[animID] = shockwaveLeft[animFrames-1].getWidth(null);
+        height[animID] = shockwaveLeft[animFrames-1].getHeight(null);
+        
         if(right){g2d.drawImage(shockwaveRight[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
         if(left){g2d.drawImage(shockwaveLeft[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
     }
@@ -587,7 +598,8 @@ public class Audiomancer extends JPanel implements KeyListener
             shockwaveImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Slam Effect/shockwave_"+(i+1)+".png"));
             shockwave[i] = shockwaveImages[i].getImage();
         }
-        
+        width[animID] = shockwave[animFrames-1].getWidth(null);
+        height[animID] = shockwave[animFrames-1].getHeight(null);
         g2d.drawImage(shockwave[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);
     }
     
@@ -599,7 +611,7 @@ public class Audiomancer extends JPanel implements KeyListener
     	int currCol = tileMap.getColTile(x[animID]);
         int tempx = x[animID];
     	int tempy = y[animID];
-    	int toyD = y[animID] + (int)ySpd;
+    	int toyD = y[animID] + (int)ySpd[animID];
     	
     	if(Dpressed && !Apressed){right=true; left=false;}
         if(Apressed && !Dpressed){left=true; right=false;}
@@ -628,13 +640,17 @@ public class Audiomancer extends JPanel implements KeyListener
             fallingLeftImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/jumping/Jumpfall Transit/audiomancer_jumpfall_left_"+(i+1)+".png"));
             fallingLeft[i] = fallingLeftImages[i].getImage();
         }
-		y[animID]+=ySpd;
-		ySpd+=0.25;
+        
+        width[animID] = fallingLeft[animFrames-1].getWidth(null);
+        height[animID] = fallingLeft[animFrames-1].getHeight(null);
+        
+		y[animID]+=ySpd[animID];
+		ySpd[animID]+=0.25;
 		
 		
 		
 		
-        calculateCorners(x[animID], toyD);
+        calculateCorners(x[animID], toyD, animID);
     	if(botLeft || botRight)
     	{
     		tempy = (currRow) * tileMap.getTileSize();
@@ -673,7 +689,7 @@ public class Audiomancer extends JPanel implements KeyListener
     			standing=true;
     		}
     		inAir=false;
-    		ySpd=defaultYSpd;
+    		ySpd[animID]=defaultYSpd;
     		jumpSpeed=defaultJumpSpeed;
     	}
     
@@ -710,6 +726,9 @@ public class Audiomancer extends JPanel implements KeyListener
         	jumpingLeft[i] = jumpingLeftImages[i].getImage();
         }	
         
+        width[animID] = jumpingLeft[animFrames-1].getWidth(null);
+        height[animID] = jumpingLeft[animFrames-1].getHeight(null);
+        
         jumpSpeed-=0.2;
 		if(jumpSpeed<=0)
 		{
@@ -722,7 +741,7 @@ public class Audiomancer extends JPanel implements KeyListener
 		}
 		x[animID]=tempx;
 		
-		calculateCorners(x[animID], toyU);
+		calculateCorners(x[animID], toyU,animID);
 		if(topRight || topLeft)
 		{
 			
@@ -747,16 +766,16 @@ public class Audiomancer extends JPanel implements KeyListener
         
     	g.setColor(Color.GREEN);
     	g.drawRect(x[playerID], y[playerID], 31, 31);
-    	g.drawRect(x[playerID]-xSpd, y[playerID], 31+xSpd, 31);
+    	g.drawRect(x[playerID]-xSpd[playerID], y[playerID]-(int)jumpSpeed, 31+xSpd[playerID], 31+(int)jumpSpeed);
     	g.setColor(Color.RED);
-    	g.drawRect(x[playerID], y[playerID]-(int)jumpSpeed, 31 , 31+(int)jumpSpeed);
+    	g.drawRect(x[playerID]+xSpd[playerID], y[playerID]-(int)jumpSpeed, 31-xSpd[playerID] , 31+(int)jumpSpeed);
     	//g.drawRect(x[playerID]-xSpd-(width[playerID]/2), y[playerID], 32, 32);
     }
     
-   /*public Rectangle getBounds(int ID)
+    public Rectangle getBounds(int ID)
     {
-        return new Rectangle((int)x, (int)y, width, height);
-    }*/
+        return new Rectangle((int)x[ID], (int)y[ID], width[ID], height[ID]);
+    }
     public int getX(int ID){return x[ID];}
     public int getY(int ID){return y[ID];}
     public void setX(int i, int ID){x[ID]=i;}
