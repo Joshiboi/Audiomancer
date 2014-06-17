@@ -8,21 +8,25 @@ import java.awt.Image;
 public class TileMap
 {
     private int x,y;
-    private Image floor;
-    private Image background;
+    private Image[] tiles;
+    private ImageIcon[] tileImages;
     private int tileSize;
     private int[][] map;
     private int mapWidth;
     private int mapHeight;
+    private int tileCount=7;
     
     public TileMap(String s, int tileSize)
     {
         this.tileSize = tileSize;
-        ImageIcon ii = new ImageIcon(this.getClass().getResource("/resources/textures/environment/default floor/floor.png"));
-        floor = ii.getImage();
         
-        ImageIcon ii2 = new ImageIcon(this.getClass().getResource("/resources/textures/environment/background image/Lab Back.png"));
-        background = ii2.getImage();
+        tiles = new Image[tileCount];
+        tileImages = new ImageIcon[tileCount];
+        for(int i=0;i<tileCount;i++)
+        {
+        	tileImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/environment/tiles/tile"+(i)+".png"));
+        	tiles[i] = tileImages[i].getImage();
+        }
         
         try
         {
@@ -70,10 +74,6 @@ public class TileMap
     public void setY(int i){y=i;}
     public void setX(int i){x=i;}
     
-    public void update()
-    {
-    }
-    
     public void draw(Graphics2D g)
     {
         for(int row=0;row<mapHeight;row++)
@@ -84,12 +84,31 @@ public class TileMap
                 
                 if(rc==0)
                 {
-                    g.drawImage(floor,x + col * tileSize, y + row * tileSize,null);
-                    
+                    g.drawImage(tiles[rc], x + col * tileSize, (y + row * tileSize),null);
                 }
                 if(rc==1)
                 {
-                	g.drawImage(background,x + col * tileSize, y + row * tileSize,null);
+                	g.drawImage(tiles[rc],x + col * tileSize, y + row * tileSize,null);
+                }
+                if(rc==2)
+                {
+                	g.drawImage(tiles[rc], x + col * tileSize, (y + row * tileSize),null);
+                }
+                if(rc==3)
+                {
+                	g.drawImage(tiles[rc], x + col * tileSize, (y + row * tileSize),null);
+                }
+                if(rc==4)
+                {
+                	g.drawImage(tiles[rc], x + col * tileSize, (y + row * tileSize),null);
+                }
+                if(rc==5)
+                {
+                	g.drawImage(tiles[rc], x + col * tileSize, (y + row * tileSize),null);
+                }
+                if(rc==6)
+                {
+                	g.drawImage(tiles[rc], x + col * tileSize, (y + row * tileSize),null);
                 }
             }
         }
