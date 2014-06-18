@@ -1,4 +1,4 @@
-package ProClasses;
+ package ProClasses;
 
 
 import java.awt.Font;
@@ -20,10 +20,19 @@ import javax.swing.ImageIcon;
 
 public class Board extends JPanel implements ActionListener
 {
-    //class instance declarations
+	private static final long serialVersionUID = 1105451800805702002L;
+	//class instance declarations
     private Audiomancer audiomancer;
     private Timer timer;
     private TileMap tileMap;
+    
+    private Audiomancer_bolt[] bolts;
+    private int maxBolts = 1000;
+    private int currentBolts;
+    
+    private Audiomancer_shockwave[] shockwaves;
+    private int maxShockwaves = 1000;
+    private int currentShockwaves;
     
     //framerate variables
     private static long prevTime=System.nanoTime();
@@ -43,7 +52,7 @@ public class Board extends JPanel implements ActionListener
     {
         this.setFocusable(true);
         this.setDoubleBuffered(true);
-        
+        requestFocus();
         addMouseListener(new TAdapter());
         addKeyListener(new TAdapter2());
         
@@ -58,12 +67,26 @@ public class Board extends JPanel implements ActionListener
             current[i]=0;
         }
         
+        shockwaves = new Audiomancer_shockwave[maxShockwaves];
+        bolts = new Audiomancer_bolt[maxBolts];
         tileMap = new TileMap("testmap.txt", 32);
         timer = new Timer(16, this);
         audiomancer = new Audiomancer(tileMap);
         
         width = 1280;
         height = 720;
+    }
+    
+    public void destroyBolt(int target)
+    {
+    	bolts[target] = bolts[currentBolts-1];
+    	currentBolts--;
+    }
+    
+    public void destroyShockwave(int target)
+    {
+    	shockwaves[target] = shockwaves[currentShockwaves-1];
+    	currentShockwaves--;
     }
         
     public void actionPerformed(ActionEvent e)
@@ -78,6 +101,15 @@ public class Board extends JPanel implements ActionListener
             frames=0;
         }
         frames++;
+        
+        for(int i=0;i<currentBolts;i++)
+        {
+        	if(bolts[i].isColliding())
+        	{
+        		destroyBolt(i);
+        	}
+        }
+        
         if(!audiomancer.isFalling())
         {
         	current[6]=0;
@@ -88,24 +120,6 @@ public class Board extends JPanel implements ActionListener
         
         repaint();
     }
-    
-    
-    public boolean isColliding(Rectangle _r1, Rectangle _r2)
-    {
-        Rectangle r1=_r1;
-        Rectangle r2=_r2;
-        
-        if(r1.intersects(r2))
-        {
-        	return true;
-        }
-        else
-        {
-        	return false;
-        }
-        
-    }
-    
 
     public void paintComponent(Graphics g)
     {
@@ -113,7 +127,10 @@ public class Board extends JPanel implements ActionListener
         Graphics2D g2d = (Graphics2D) g;
         g.setFont(new Font("Italic", Font.PLAIN, 40));
         
+        //draw the map
         tileMap.draw(g2d);
+        
+        //draw audiomancer animations
         if(audiomancer.characterStanding())
         {
             audiomancer_stand(g);
@@ -126,17 +143,9 @@ public class Board extends JPanel implements ActionListener
         {
             audiomancer_shoot(g);
         }
-        if(audiomancer.shooting())
-        {
-            audiomancer_bolt(g);
-        }
         if(audiomancer.performingShockwave())
         {
             audiomancer_shockwave(g);
-        }
-        if(audiomancer.animatingShockwave())
-        {
-            audiomancer_shockwave_animation(g);
         }
         if(audiomancer.isFalling())
         {
@@ -146,6 +155,17 @@ public class Board extends JPanel implements ActionListener
         {
         	audiomancer_jumping(g);
         }
+        
+        //draw audiomancer sub-animations
+        for(int i=0;i<currentBolts;i++)
+        {
+        	drawBolt(g, i);
+        }
+        for(int i=0;i<currentShockwaves;i++)
+        {
+        	drawShockwave(g, i);
+        }
+        
         //audiomancer.drawBox(g);
         g.drawString(""+fps, 35, 67);
     }
@@ -211,7 +231,7 @@ public class Board extends JPanel implements ActionListener
         long passedTime;
         passedTime = System.nanoTime() - prevTimes[animID];
         
-        if(passedTime/80000000 >= 1)
+        if(passedTime/32000000 >= 1)
         {
             current[animID]++;
             wait[animID]=false;
@@ -223,38 +243,43 @@ public class Board extends JPanel implements ActionListener
         {
             current[animID]=0;
             audiomancer.setCharacterShooting(false);
-            audiomancer.setStanding(true);
             audiomancer.setCanMove(true);
+            if(!audiomancer.getDPressed() && !audiomancer.getAPressed())
+            {
+            	audiomancer.setStanding(true);
+            }
+            else
+            {
+            	audiomancer.setWalking(true);
+            }
             audiomancer.setCanPerformShockwave(true);
             audiomancer.setCanJump(true);
+            audiomancer.setCanShoot(true);
             
+        }
+        if(current[animID]==8)
+        {
+        	current[animID]++;
+        	if(audiomancer.characterLeft())
+            {
+            	if(currentBolts < maxBolts )
+                {
+                	bolts[currentBolts] = new Audiomancer_bolt(tileMap, audiomancer.getX(0), audiomancer.boltY(), -10);
+                	currentBolts++;
+                }
+            }
+            else if(audiomancer.characterRight())
+            {
+            	if(currentBolts < maxBolts )
+                {
+                	bolts[currentBolts] = new Audiomancer_bolt(tileMap, audiomancer.getX(0)+audiomancer.getWidth(0), audiomancer.boltY(), 10);
+                	currentBolts++;
+                }
+            }
         }
         audiomancer.character_shoot(g, current[animID]);
     }
-    
-    public void audiomancer_bolt(Graphics g)
-    {
-    	//this is animation 3
-    	int animID=3;
-        int animFrames=2;
-        long passedTime;
-        passedTime = System.nanoTime() - prevTimes[animID];
-        
-        if(passedTime/125000000 >= 1)
-        {
-            current[animID]++;
-            wait[animID]=false;
-            passedTime=0;
-            prevTimes[animID]=System.nanoTime();
-        }
-        
-        if(current[animID]>=animFrames)
-        {
-            current[animID]=0;
-        }
-        audiomancer.bolt(g, current[animID]);
-    }
-    
+   
     public void audiomancer_shockwave(Graphics g)
     {
         //this is animation 4
@@ -262,10 +287,6 @@ public class Board extends JPanel implements ActionListener
         int animFrames=14;
         long passedTime;
         passedTime = System.nanoTime() - prevTimes[animID];
-        
-        audiomancer.character_shockwave(g, current[animID]);
-        
-        if(current[animID]==8){audiomancer.setShockwaveAnimation(true);}
         
         if(passedTime/31250000 >= 1)
         {
@@ -279,48 +300,45 @@ public class Board extends JPanel implements ActionListener
         {
             current[animID]=0;
             audiomancer.setPerformShockwave(false);
-            audiomancer.setStanding(true);
             audiomancer.setCanMove(true);
+            if(!audiomancer.getDPressed() && !audiomancer.getAPressed())
+            {
+            	audiomancer.setStanding(true);
+            }
+            else
+            {
+            	audiomancer.setWalking(true);
+            }
             audiomancer.setCanShoot(true);
             audiomancer.setCanJump(true);
         }
+        
+        if(current[animID]==8)
+        {
+        	audiomancer.setShockwaveAnimation(true);
+        	current[animID]++;
+        	if(currentShockwaves < maxShockwaves)
+        	{
+        		shockwaves[currentShockwaves] = new Audiomancer_shockwave(tileMap, audiomancer.getX(0) - 48, audiomancer.getY(0));
+        		currentShockwaves++;
+        	}
+        }
+        
+        audiomancer.character_shockwave(g, current[animID]);
     }
     
-    public void audiomancer_shockwave_animation(Graphics g)
-    {
-    	//this is animation 5
-        int animID=5;
-        int animFrames=8;
-        long passedTime;
-        passedTime = System.nanoTime() - prevTimes[animID];
-        
-        audiomancer.shockwave(g, current[animID]);
-        
-        if(passedTime/125000000 >= 1)
-        {
-            current[animID]++;
-            wait[animID]=false;
-            passedTime=0;
-            prevTimes[animID]=System.nanoTime();
-        }
-        
-        if(current[animID]>=animFrames)
-        {
-            current[animID]=0;
-            audiomancer.setShockwaveAnimation(false);
-            audiomancer.setCanPerformShockwave(true);
-        }
-    }
     
     public void audiomancer_falling(Graphics g)
     {
         //this is animation 6
         int animID=6;
-        int animFrames=6;
+        int animFrames=7;
         long passedTime;
         passedTime = System.nanoTime() - prevTimes[animID];
+        if(current[animID]==1){wait[animID]=true;}
+        if(wait[animID] && passedTime/500000000 <1){}
         
-        if(passedTime/125000000 >= 1)
+        else if(passedTime/125000000>=1)
         {
             current[animID]++;
             wait[animID]=false;
@@ -356,6 +374,55 @@ public class Board extends JPanel implements ActionListener
             current[animID]=animFrames-1;
         }
         audiomancer.jump(g, current[animID]);
+    }
+    
+    public void drawBolt(Graphics g, int ID)
+    {
+    	//this is animation 3
+    	int animID=3;
+        int animFrames=2;
+        long passedTime;
+        passedTime = System.nanoTime() - prevTimes[animID];
+        
+        if(passedTime/125000000 >= 1)
+        {
+            current[animID]++;
+            wait[animID]=false;
+            passedTime=0;
+            prevTimes[animID]=System.nanoTime();
+        }
+        
+        if(current[animID]>=animFrames)
+        {
+            current[animID]=0;
+        }
+        bolts[ID].draw(g, current[animID]);
+    }
+    
+    public void drawShockwave(Graphics g, int ID)
+    {
+    	//this is animation 5
+        int animID=5;
+        int animFrames=8;
+        long passedTime;
+        passedTime = System.nanoTime() - prevTimes[animID];
+        
+        if(passedTime/25000000 >= 1)
+        {
+            current[animID]++;
+            wait[animID]=false;
+            passedTime=0;
+            prevTimes[animID]=System.nanoTime();
+        }
+        
+        if(current[animID]>=animFrames)
+        {
+            current[animID]=0;
+            destroyShockwave(ID);
+            audiomancer.setCanPerformShockwave(true);
+            audiomancer.setShockwaveAnimation(false);
+        }
+        else{shockwaves[ID].draw(g, current[animID]);}
     }
     public static void main(String[] args)
     {
