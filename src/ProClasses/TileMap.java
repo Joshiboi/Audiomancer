@@ -14,8 +14,9 @@ public class TileMap
     private int[][] map;
     private int mapWidth;
     private int mapHeight;
-    private int tileCount=7;
-    
+    private int tileCount=6;
+    private int heightTile;
+    private int widthTile;
     public TileMap(String s, int tileSize)
     {
         this.tileSize = tileSize;
@@ -34,11 +35,13 @@ public class TileMap
             
             mapWidth = Integer.parseInt(br.readLine());
             mapHeight = Integer.parseInt(br.readLine());
+            tileCount = Integer.parseInt(br.readLine());
             map = new int[mapHeight][mapWidth];
             
             String delimiters = " ";
             for(int row=0;row<mapHeight;row++)
             {
+            	
                 String line = br.readLine();
                 String[] tokens = line.split(delimiters);
                 for(int col=0;col<mapWidth;col++)
@@ -74,42 +77,27 @@ public class TileMap
     public void setY(int i){y=i;}
     public void setX(int i){x=i;}
     
+    public int getHeight()
+    {
+    	heightTile = mapHeight-1;
+    	return((heightTile*tileSize)-tileSize);
+    }
+    public int getWidth(){return mapWidth;}
+    
     public void draw(Graphics2D g)
     {
         for(int row=0;row<mapHeight;row++)
         {
+        	
             for(int col=0;col<mapWidth;col++)
             {
                 int rc = map[row][col];
-                
-                if(rc==0)
+                if(rc==4 || rc==3)
                 {
-                    g.drawImage(tiles[rc], x + col * tileSize, (y + row * tileSize),null);
-                }
-                if(rc==1)
-                {
-                	g.drawImage(tiles[rc],x + col * tileSize, y + row * tileSize,null);
-                }
-                if(rc==2)
-                {
+                	g.drawImage(tiles[1], x + col * tileSize, (y + row * tileSize),null);
                 	g.drawImage(tiles[rc], x + col * tileSize, (y + row * tileSize),null);
                 }
-                if(rc==3)
-                {
-                	g.drawImage(tiles[rc], x + col * tileSize, (y + row * tileSize),null);
-                }
-                if(rc==4)
-                {
-                	g.drawImage(tiles[rc], x + col * tileSize, (y + row * tileSize),null);
-                }
-                if(rc==5)
-                {
-                	g.drawImage(tiles[rc], x + col * tileSize, (y + row * tileSize),null);
-                }
-                if(rc==6)
-                {
-                	g.drawImage(tiles[rc], x + col * tileSize, (y + row * tileSize),null);
-                }
+                else {g.drawImage(tiles[rc], x + col * tileSize, (y + row * tileSize),null);}
             }
         }
     }
