@@ -37,10 +37,10 @@ public class Audiomancer extends JPanel implements KeyListener
 	private static final long serialVersionUID = 8184458597936033041L;
 
 	private TileMap tileMap;
-	protected int animationCount;
-    protected int[] x,y;
-    protected int playerID=0;
-    protected int[] width, height;
+	private int animationCount;
+    private int[] x,y;
+    private int playerID=0;
+    private int[] width, height;
     
     private Image[][] standingImages;
     private ImageIcon[][] standingImageIcons;
@@ -52,47 +52,42 @@ public class Audiomancer extends JPanel implements KeyListener
     private ImageIcon[][] fallingImageIcons;
     private Image[][] shootingImages;
     private ImageIcon[][] shootingImageIcons;
-    private Image[][] shockwaveImages;
-    private ImageIcon[][] shockwaveImageIcons;
     
-    protected boolean left=true;
-    protected boolean right=false;
+    private boolean left=true;
+    private boolean right=false;
     
-    protected boolean standing=true;
-    protected boolean walk=false;
+    private boolean standing=true;
+    private boolean walk=false;
     
-    protected boolean shoot=false;
-    protected boolean characterShoot=false;
+    private boolean shoot=false;
+    private boolean characterShoot=false;
     
-    protected boolean shooting;
-    protected boolean walking;
-    protected boolean jump;
+    private boolean shooting;
+    private boolean walking;
+    private boolean jump;
     
     private long[] prevTimes;
     private int[] current;
     private boolean[] wait;
     
-    protected boolean canFall;
-    protected boolean shootBolt=false;
-    protected boolean falling=false;
-    protected boolean jumping=false;
-    protected boolean inAir=false;
-    protected boolean attacking=false;
-    protected boolean landed=false;
-    protected boolean Apressed=false;
-    protected boolean Dpressed=false;
-    protected boolean inAirLeft=false;
-    protected boolean inAirRight=false;
-    protected boolean speed=false;
-    protected boolean[] colliding;
+    private boolean canFall;
+    private boolean shootBolt=false;
+    private boolean falling=false;
+    private boolean jumping=false;
+    private boolean inAir=false;
+    private boolean attacking=false;
+    private boolean landed=false;
+    private boolean Apressed=false;
+    private boolean Dpressed=false;
+    private boolean[] colliding;
     
     private double jumpSpeed;
-    protected int[] xSpd;
-    protected double[] ySpd;
-    protected int defaultXSpd=2;
-    protected int defaultYSpd=1;
-    protected int defaultJumpSpeed=5;
-    protected int characterHitboxDiffs = 8;
+    private int[] xSpd;
+    private double[] ySpd;
+    private int defaultXSpd=2;
+    private int defaultYSpd=1;
+    private int defaultJumpSpeed=5;
+    private int characterHitboxDiffs = 8;
     
     private boolean topLeft, topRight, botLeft, botRight;
     private boolean topLeftLeft, botLeftLeft, topRightRight, botRightRight;
@@ -132,7 +127,6 @@ public class Audiomancer extends JPanel implements KeyListener
     	int standingFrames=2;
     	int shootingFrames=12;
     	int fallingFrames=7;
-    	int shockwaveFrames=14;
     	
     	standingImages = new Image[2][standingFrames];
     	standingImageIcons = new ImageIcon[2][standingFrames];
@@ -149,8 +143,6 @@ public class Audiomancer extends JPanel implements KeyListener
     	shootingImages = new Image[2][shootingFrames];
     	shootingImageIcons = new ImageIcon[2][shootingFrames];
     	
-    	shockwaveImages = new Image[2][shockwaveFrames];
-    	shockwaveImageIcons = new ImageIcon[2][shockwaveFrames];
     	
     	for(int i=0;i<2;i++)
     	{
@@ -217,19 +209,6 @@ public class Audiomancer extends JPanel implements KeyListener
     			shootingImages[i][j] = shootingImageIcons[i][j].getImage();
     		}
     		
-    		for(int j=0;j<shockwaveFrames;j++)
-    		{
-    			if(i==0)
-    			{
-    				shockwaveImageIcons[i][j] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Slam/audiomancer_slam_left_"+(j+1)+".png"));
-    			}
-    			else
-    			{
-    				shockwaveImageIcons[i][j] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Slam/audiomancer_slam_right_"+(j+1)+".png"));
-    			}
-    			shockwaveImages[i][j] = shockwaveImageIcons[i][j].getImage();
-    		}
-    		
     	}
     	
     }
@@ -246,7 +225,6 @@ public class Audiomancer extends JPanel implements KeyListener
         if(KeyEvent.VK_SHIFT == _e)
         {
         	xSpd[playerID]=10;
-        	speed=true;
         }
         
         if(KeyEvent.VK_D == _e)
@@ -308,7 +286,6 @@ public class Audiomancer extends JPanel implements KeyListener
         if(KeyEvent.VK_SHIFT == _e)
         {
         	xSpd[playerID]=defaultXSpd;
-        	speed=false;
         }
         if(KeyEvent.VK_D == _e)
         {
