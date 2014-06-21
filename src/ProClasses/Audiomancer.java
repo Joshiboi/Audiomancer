@@ -1,11 +1,11 @@
 package ProClasses;
 
+import java.applet.Applet;
+import java.applet.AudioClip;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseEvent;
-import java.awt.Image;
-import java.awt.Rectangle;
 import java.awt.*;
 import javax.swing.ImageIcon;
 import java.awt.Font;
@@ -22,39 +22,62 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+import java.io.File;
+import java.io.IOException;
+
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.SourceDataLine;
+
 public class Audiomancer extends JPanel implements KeyListener
 {
 	private static final long serialVersionUID = 8184458597936033041L;
 
 	private TileMap tileMap;
-	
 	protected int animationCount;
     protected int[] x,y;
     protected int playerID=0;
     protected int[] width, height;
     
+    private Image[][] standingImages;
+    private ImageIcon[][] standingImageIcons;
+    private Image[][] walkingImages;
+    private ImageIcon[][] walkingImageIcons;
+    private Image jumpingImages[];
+    private ImageIcon jumpingImageIcons[];
+    private Image[][] fallingImages;
+    private ImageIcon[][] fallingImageIcons;
+    private Image[][] shootingImages;
+    private ImageIcon[][] shootingImageIcons;
+    private Image[][] shockwaveImages;
+    private ImageIcon[][] shockwaveImageIcons;
+    
     protected boolean left=true;
     protected boolean right=false;
     
     protected boolean standing=true;
-    
     protected boolean walk=false;
     
     protected boolean shoot=false;
     protected boolean characterShoot=false;
-    protected boolean shootLeft;
-    protected boolean shootRight;
     
-    protected boolean shockwave_animation=false;
-    protected boolean performShockwave;
+    protected boolean shooting;
+    protected boolean walking;
+    protected boolean jump;
     
-    protected boolean canPerformShockwave=true;
-    protected boolean canMove=true;
-    protected boolean canShoot=true;
-    protected boolean canJump=true;
+    private long[] prevTimes;
+    private int[] current;
+    private boolean[] wait;
+    
+    protected boolean canFall;
+    protected boolean shootBolt=false;
     protected boolean falling=false;
     protected boolean jumping=false;
     protected boolean inAir=false;
+    protected boolean attacking=false;
     protected boolean landed=false;
     protected boolean Apressed=false;
     protected boolean Dpressed=false;
@@ -72,7 +95,7 @@ public class Audiomancer extends JPanel implements KeyListener
     protected int characterHitboxDiffs = 8;
     
     private boolean topLeft, topRight, botLeft, botRight;
-    private boolean topLeftLeft, topLeftTop, botLeftLeft, botLeftBot, topRightRight, topRightTop, botRightRight, botRightBot;
+    private boolean topLeftLeft, botLeftLeft, topRightRight, botRightRight;
     
     public Audiomancer(TileMap tm)
     {
@@ -86,18 +109,129 @@ public class Audiomancer extends JPanel implements KeyListener
         width = new int[animationCount];
         height = new int[animationCount];
         colliding = new boolean[animationCount];
-        
-        xSpd[playerID]=defaultXSpd;
-        ySpd[playerID] = defaultYSpd;
+        prevTimes = new long[animationCount];
+        wait = new boolean[animationCount];
+        current = new int[animationCount];
         jumpSpeed = defaultJumpSpeed;
         
         for(int i=0;i<animationCount;i++)
         {
+        	current[i]=0;
         	colliding[i]=false;
 	        x[i]=33;
 	        y[i]=(tileMap.getHeight());
+	        xSpd[i]=defaultXSpd;
+	        ySpd[i] = defaultYSpd;
         }
         
+    }
+    
+    public void load()
+    {
+    	int walkingFrames=8;
+    	int standingFrames=2;
+    	int shootingFrames=12;
+    	int fallingFrames=7;
+    	int shockwaveFrames=14;
+    	
+    	standingImages = new Image[2][standingFrames];
+    	standingImageIcons = new ImageIcon[2][standingFrames];
+    	
+    	walkingImages = new Image[2][walkingFrames];
+    	walkingImageIcons = new ImageIcon[2][walkingFrames];
+    	
+    	jumpingImages = new Image[2];
+    	jumpingImageIcons = new ImageIcon[2];
+    	
+    	fallingImages = new Image[2][fallingFrames];
+    	fallingImageIcons = new ImageIcon[2][fallingFrames];
+    	
+    	shootingImages = new Image[2][shootingFrames];
+    	shootingImageIcons = new ImageIcon[2][shootingFrames];
+    	
+    	shockwaveImages = new Image[2][shockwaveFrames];
+    	shockwaveImageIcons = new ImageIcon[2][shockwaveFrames];
+    	
+    	for(int i=0;i<2;i++)
+    	{
+    		if(i==0)
+    		{
+    			jumpingImageIcons[i] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/jumping/audiomancer_jump_left.png"));
+    		}
+    		else
+    		{
+    			jumpingImageIcons[i] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/jumping/audiomancer_jump_right.png"));
+    		}
+    		
+    		jumpingImages[i] = jumpingImageIcons[i].getImage();
+    		
+    		for(int j=0;j<standingFrames;j++)
+    		{
+    			if(i==0)
+    			{
+    				standingImageIcons[i][j] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Stand/audiomancer_stand_left_"+(j+1)+".png"));
+    			}
+    			else
+    			{
+    				standingImageIcons[i][j] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Stand/audiomancer_stand_right_"+(j+1)+".png"));
+    			}
+    			standingImages[i][j] = standingImageIcons[i][j].getImage();
+    		}
+    		
+    		for(int j=0;j<walkingFrames;j++)
+    		{
+    			if(i==0)
+    			{
+    				walkingImageIcons[i][j] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Walk/audiomancer_walk_left_"+(j+1)+".png"));
+    			}
+    			else
+    			{
+    				walkingImageIcons[i][j] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Walk/audiomancer_walk_right_"+(j+1)+".png"));
+    			}
+    			walkingImages[i][j] = walkingImageIcons[i][j].getImage();
+    		}
+    		
+    		for(int j=0;j<fallingFrames;j++)
+    		{
+    			if(i==0)
+    			{
+    				fallingImageIcons[i][j] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/jumping/Jumpfall Transit/audiomancer_jumpfall_left_"+(j+1)+".png"));
+    			}
+    			else
+    			{
+    				fallingImageIcons[i][j] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/jumping/Jumpfall Transit/audiomancer_jumpfall_right_"+(j+1)+".png"));
+    			}
+    			fallingImages[i][j] = fallingImageIcons[i][j].getImage();
+    		}
+    		
+    		for(int j=0;j<shootingFrames;j++)
+    		{
+    			if(i==0)
+    			{
+    				shootingImageIcons[i][j] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Spell/audiomancer_spell_left_"+(j+1)+".png"));
+    			}
+    			else
+    			{
+    				shootingImageIcons[i][j] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Spell/audiomancer_spell_right_"+(j+1)+".png"));
+    			}
+    			shootingImages[i][j] = shootingImageIcons[i][j].getImage();
+    		}
+    		
+    		for(int j=0;j<shockwaveFrames;j++)
+    		{
+    			if(i==0)
+    			{
+    				shockwaveImageIcons[i][j] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Slam/audiomancer_slam_left_"+(j+1)+".png"));
+    			}
+    			else
+    			{
+    				shockwaveImageIcons[i][j] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Slam/audiomancer_slam_right_"+(j+1)+".png"));
+    			}
+    			shockwaveImages[i][j] = shockwaveImageIcons[i][j].getImage();
+    		}
+    		
+    	}
+    	
     }
     
     public void keyPressed(KeyEvent e)
@@ -118,92 +252,54 @@ public class Audiomancer extends JPanel implements KeyListener
         if(KeyEvent.VK_D == _e)
         {
         	Dpressed=true;
-        	if(falling || jumping){inAir=true; right=true; left=false;}
-        	if(canMove)
+        	if(!attacking)
         	{
-        		standing=false;
-        		walk=true;
-        		right = true;
-        		left=false;
+	        	
+	        	walking=true;
+	        	right=true;
+	        	left=false;
         	}
-        	
         }
         if(KeyEvent.VK_A == _e)
         {
         	Apressed=true;
-        	if(falling || jumping){inAir=true; left=true; right=false;}
-        	if(canMove)
+        	if(!attacking)
         	{
-        		standing=false;
-        		walk=true;
-        		left=true;
-        		right=false;
+	        	walking=true;
+	        	left=true;
+	        	right=false;
         	}
         	
         }
         if(KeyEvent.VK_RIGHT == _e)
         {
-            if(canShoot)
-            {
-            	canShoot=false;
-            	canJump=false;
-                standing=false;
-                canPerformShockwave=false;
-                right=true;
-                left=false;
-                if(walk){walk=false;}
-                canMove=false;
-                characterShoot=true;
-            }
-        }
-        if(KeyEvent.VK_LEFT == _e)
-        {
-            if(canShoot)
-            {
-            	canShoot=false;
-            	canJump=false;
-                canPerformShockwave=false;
-                standing=false;
-                right=false;
-                left=true;
-                if(walk){walk=false;}
-                canMove=false;
-                characterShoot=true;
-            }
-        }
-        if(KeyEvent.VK_SPACE == _e)
-        {
-        	if(canJump)
+        	if(!inAir)
         	{
-        		if(walk)
-        		{
-        			inAir=true;
-        		}
-        		if(characterShoot){characterShoot=false;}
-	        	jumping=true;
-	        	canShoot=false;
-	        	canJump=false;
-	        	standing=false;
-	        	walk=false;
-	        	canMove=false;
-	        	canPerformShockwave=false;
-	        	landed=false;
+        		attacking=true;
+	            shooting=true;
+	            right=true;
+	            left=false;
         	}
         	
         }
-        if(KeyEvent.VK_CONTROL == _e)
+        if(KeyEvent.VK_LEFT == _e)
         {
-        	if(canPerformShockwave && !shockwave_animation && !characterShoot && !falling && !jumping)
-            {
-        		shockwave_animation=true;
-        		canJump=false;
-            	canPerformShockwave=false;
-                performShockwave=true;
-                canMove=false;
-                canShoot=false;
-                standing=false;
-                walk=false;
-            }
+        	if(!inAir)
+        	{
+        		attacking=true;
+	            shooting=true;
+	            left=true;
+	            right=false;
+        	}
+        	
+        }
+        if(KeyEvent.VK_SPACE == _e)
+        {
+        	if(!jumping && !falling)
+        	{
+        		jump=true;
+            	landed=false;
+        	}
         }
     }
     public void keyReleased(KeyEvent e)
@@ -219,32 +315,17 @@ public class Audiomancer extends JPanel implements KeyListener
         	Dpressed=false;
         	if(!Apressed)
         	{
-        		if(falling || jumping){inAir=false;}
+        		walking=false;
         	}
-            if(canMove)
-            {
-            	if(!Apressed)
-            	{
-	                walk=false;
-	                standing=true;
-            	}
-            }
+            
         }
         if(KeyEvent.VK_A == _e)
         {
         	Apressed=false;
         	if(!Dpressed)
         	{
-        		if(falling || jumping){inAir=false;}
+        		walking=false;
         	}
-            if(canMove)
-            {
-            	if(!Dpressed)
-            	{
-	                walk=false;
-	                standing=true;
-            	}
-            }
         }
     }
     public void keyTyped(KeyEvent e){}
@@ -288,13 +369,9 @@ public class Audiomancer extends JPanel implements KeyListener
     private void calculateCorners(int _x, int _y, int animID)
     {
     	topLeftLeft = false;
-    	topLeftTop = false;
     	botLeftLeft = false;
-    	botLeftBot = false;
     	topRightRight = false;
-    	topRightTop = false;
     	botRightRight = false;
-    	botRightBot = false;
     	
     	
     	
@@ -316,372 +393,359 @@ public class Audiomancer extends JPanel implements KeyListener
         
         if (topLeft && ( (leftTile * tileMap.getTileSize()) - (characterHitboxDiffs+1) < (tileMap.getColTile(x[animID]) * tileMap.getTileSize()) )) {
         	topLeftLeft = true;
-        } else if (topLeft){
-        	topLeftTop = true;
-        }
+        } 
+        
         
         if (botLeft && ( (leftTile * tileMap.getTileSize()) - (characterHitboxDiffs+1) < (tileMap.getColTile(x[animID]) * tileMap.getTileSize()) )) {
         	botLeftLeft = true;
-        } else if (botLeft){
-        	botLeftBot = true;
-        }
+        } 
+        
         
         if (topRight && ((rightTile * tileMap.getTileSize()) + (characterHitboxDiffs+1) > tileMap.getColTile(x[animID]) * tileMap.getTileSize())) {
         	topRightRight = true;
-        } else if (topRight){
-        	topRightTop = true;
         }
         
         if (botRight && ((rightTile * tileMap.getTileSize()) + (characterHitboxDiffs+1) > tileMap.getColTile(x[animID]) * tileMap.getTileSize())) {
         	botRightRight = true;
-        } else if (botRight){
-        	botRightBot = true;
         }
         
         
     }
     
-    public void stand(Graphics g, int current)
+    public void update()
     {
-    	int animID=playerID;
+    	if(!inAir && walking && !attacking){walk=true;}
+    	else{walk=false;}
+    	
+    	if(!inAir && attacking)
+    	{
+    		if(shooting){shoot=true;}
+    	}
+    	if(!inAir && jump && !attacking)
+    	{
+    		jumping=true;
+    		inAir=true;
+    	}
+    }
+    
+    public void paint(Graphics g)
+    {
+    	if(walk)
+    	{
+    		walk(g);
+    	}
+    	else if(shoot)
+    	{
+    		character_shoot(g);
+    	}
+    	else if(falling)
+    	{
+    		falling(g);
+    	}
+    	else if(jumping)
+    	{
+    		jump(g);
+    	}
+    	else{stand(g);}
+    }
+  
+    public void stand(Graphics g)
+    {
+    	
+    	int xyID=playerID;
+    	int animID=1;
         int animFrames=2;
-        int toyD = y[animID] + (int)ySpd[animID];
-        
-        Image[] standingRight = new Image[animFrames];
-        ImageIcon[] standingRightImages = new ImageIcon[animFrames];
-        
-        Image[] standingLeft = new Image[animFrames];
-        ImageIcon[] standingLeftImages = new ImageIcon[animFrames];
-        
+        int toyD = y[xyID] + (int)ySpd[xyID];
+        long passedTime;
         Graphics2D g2d = (Graphics2D) g;
+       // System.out.println("standing "+xyID+" "+toyD);
         
-        for(int i=0;i<animFrames;i++)
+        width[animID] = standingImages[0][animFrames-1].getWidth(null);
+        height[animID] = standingImages[0][animFrames-1].getHeight(null);
+        
+        passedTime = System.nanoTime() - prevTimes[animID];
+        
+        if(passedTime/1000000000 >= 1)
         {
-            standingRightImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Stand/audiomancer_stand_right_"+(i+1)+".png"));
-            standingRight[i] = standingRightImages[i].getImage();
+            if(current[1]==1){wait[animID]=true;}
             
-            standingLeftImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Stand/audiomancer_stand_left_"+(i+1)+".png"));
-            standingLeft[i] = standingLeftImages[i].getImage();
+            if(wait[animID] && passedTime/1000000000 <3){}
+            
+            else
+            {
+                current[animID]++;
+                wait[animID]=false;
+                passedTime=0;
+                prevTimes[animID]=System.nanoTime();
+            }
         }
         
-        width[animID] = standingLeft[animFrames-1].getWidth(null);
-        height[animID] = standingLeft[animFrames-1].getHeight(null);
+        if(current[animID]>=animFrames)
+        {
+            current[animID]=0;
+        }
         
-        calculateCorners(x[animID], toyD, animID);
+        calculateCorners(x[xyID], toyD, xyID);
         if(botRight || botLeft){}
         else
         {
+        	//System.out.println("falling triggered "+botLeft+" "+botRight);
         	falling=true;
-        	landed=false;
-        	standing=false;
         }
-        if(left){g2d.drawImage(standingLeft[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
-        if(right){g2d.drawImage(standingRight[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
+        if(left){g2d.drawImage(standingImages[0][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+        if(right){g2d.drawImage(standingImages[1][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
     }
     
-    public void walk(Graphics g, int current)
+    public void walk(Graphics g)
     {
     	if(Dpressed && !Apressed){right=true; left=false;}
         if(Apressed && !Dpressed){left=true; right=false;}
-    	int animID=playerID;
+        
+        int xyID=playerID;
+    	int animID=2;
         int animFrames=8;
-        int toyD = y[animID] + (int)ySpd[animID];
-        int currCol = tileMap.getColTile(x[animID]);
-        int tempx = x[animID];
-        
-        Image[] walkingRight = new Image[animFrames];
-        ImageIcon[] walkingRightImages = new ImageIcon[animFrames];
-        
-        Image[] walkingLeft = new Image[animFrames];
-        ImageIcon[] walkingLeftImages = new ImageIcon[animFrames];
+        int toyD = y[xyID] + (int)ySpd[xyID];
+        int currCol = tileMap.getColTile(x[xyID]);
+        int tempx = x[xyID];
+        long passedTime;
         
         Graphics2D g2d = (Graphics2D) g;
         
-        for(int i=0;i<animFrames;i++)
+        
+        width[xyID] = walkingImages[0][animFrames-1].getWidth(null);
+        height[xyID] = walkingImages[0][animFrames-1].getHeight(null);
+        
+        passedTime = System.nanoTime() - prevTimes[animID];
+        
+        if(passedTime/83333333 >= 1)
         {
-            walkingLeftImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Walk/audiomancer_walk_left_"+(i+1)+".png"));
-            walkingLeft[i] = walkingLeftImages[i].getImage();
-            
-            walkingRightImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Walk/audiomancer_walk_right_"+(i+1)+".png"));
-            walkingRight[i] = walkingRightImages[i].getImage();
+            current[animID]++;
+            wait[animID]=false;
+            passedTime=0;
+            prevTimes[animID]=System.nanoTime();
+        }
+        if(current[animID]>=animFrames)
+        {
+            current[animID]=0;
         }
         
-        width[animID] = walkingLeft[animFrames-1].getWidth(null);
-        height[animID] = walkingLeft[animFrames-1].getHeight(null);
         
-        if(Dpressed && !Apressed){right=true; left=false;}
-        if(Apressed && !Dpressed){left=true; right=false;}
-        
-        calculateCorners(x[animID]+xSpd[animID], toyD, animID);
+        calculateCorners(x[xyID]+xSpd[xyID], toyD, xyID);
     	if(!botLeft)
         {
-    		calculateCorners(x[animID]-xSpd[animID], toyD, animID);
+    		calculateCorners(x[xyID]-xSpd[xyID], toyD, xyID);
     		if(!botRight)
     		{
     			falling=true;
-            	landed=false;
             	inAir=true;
-            	walk=false;
     		}
         }
-        tempx = checkLRCollisions(animID, tempx, currCol);
-        x[animID]=tempx;
-        if(right){g2d.drawImage(walkingRight[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
-        if(left){g2d.drawImage(walkingLeft[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
-    }
-    
-    public void character_shoot(Graphics g, int current)
-    {
     	
-    	int animID=playerID;
-        int animFrames=12;
+        tempx = checkLRCollisions(xyID, tempx, currCol);
+        x[xyID]=tempx;
         
-        Image[] shootingLeft = new Image[animFrames];
-        ImageIcon[] shootingLeftImages = new ImageIcon[animFrames];
-        
-        Image[] shootingRight = new Image[animFrames];
-        ImageIcon[] shootingRightImages = new ImageIcon[animFrames];
-        Graphics2D g2d = (Graphics2D) g;
-        
-        for(int i=0;i<animFrames;i++)
-        {
-            shootingLeftImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Spell/audiomancer_spell_left_"+(i+1)+".png"));
-            shootingLeft[i] = shootingLeftImages[i].getImage();
-            
-            shootingRightImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Spell/audiomancer_spell_right_"+(i+1)+".png"));
-            shootingRight[i] = shootingRightImages[i].getImage();
-        }
-        width[animID] = shootingLeft[animFrames-1].getWidth(null);
-        height[animID] = shootingLeft[animFrames-1].getHeight(null);
-        if(left)
-        {
-            g2d.drawImage(shootingLeft[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);
-        }
-        if(right)
-        {
-            g2d.drawImage(shootingRight[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);
-        }
+        if(left){g2d.drawImage(walkingImages[0][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+        if(right){g2d.drawImage(walkingImages[1][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
     }
     
-    public void character_shockwave(Graphics g, int current)
+    public void jump(Graphics g)
     {
-    	int animID=playerID;
-        int animFrames=14;
-        
-        Image[] shockwaveRight = new Image[animFrames];
-        ImageIcon[] shockwaveRightImages = new ImageIcon[animFrames];
-        
-        Image[] shockwaveLeft = new Image[animFrames];
-        ImageIcon[] shockwaveLeftImages = new ImageIcon[animFrames];
-        
-        Graphics2D g2d = (Graphics2D) g;
-        
-        for(int i=0;i<animFrames;i++)
-        {
-            shockwaveRightImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Slam/audiomancer_slam_right_"+(i+1)+".png"));
-            shockwaveRight[i] = shockwaveRightImages[i].getImage();
-            
-            shockwaveLeftImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/Slam/audiomancer_slam_left_"+(i+1)+".png"));
-            shockwaveLeft[i] = shockwaveLeftImages[i].getImage();
-        }
-        
-        width[animID] = shockwaveLeft[animFrames-1].getWidth(null);
-        height[animID] = shockwaveLeft[animFrames-1].getHeight(null);
-        
-        if(right){g2d.drawImage(shockwaveRight[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
-        if(left){g2d.drawImage(shockwaveLeft[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
-    }
-    
-    public void falling(Graphics g, int current)
-    {
-    	int animID=playerID;
-        int animFrames=7;
-    	int currRow = tileMap.getRowTile(y[animID]);
-    	int currCol = tileMap.getColTile(x[animID]);
-        int tempx = x[animID];
-    	int tempy = y[animID];
-    	int toyD = y[animID] + (int)ySpd[animID];
-    	
-    	if(Dpressed && !Apressed){right=true; left=false;}
-        if(Apressed && !Dpressed){left=true; right=false;}
-    	
-    	characterShoot=false;
-		walk=false;
-		canMove=false;
-		canPerformShockwave=false;
-		canShoot=false;
-		canJump=false;
-		standing=false;
-        
-        Image[] fallingRight = new Image[animFrames];
-        ImageIcon[] fallingRightImages = new ImageIcon[animFrames];
-        
-        Image[] fallingLeft = new Image[animFrames];
-        ImageIcon[] fallingLeftImages = new ImageIcon[animFrames];
-        
-        Graphics2D g2d = (Graphics2D) g;
-        
-        for(int i=0;i<animFrames;i++)
-        {
-        	fallingRightImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/jumping/Jumpfall Transit/audiomancer_jumpfall_right_"+(i+1)+".png"));
-            fallingRight[i] = fallingRightImages[i].getImage();
-            
-            fallingLeftImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/jumping/Jumpfall Transit/audiomancer_jumpfall_left_"+(i+1)+".png"));
-            fallingLeft[i] = fallingLeftImages[i].getImage();
-        }
-        
-        width[animID] = fallingLeft[animFrames-1].getWidth(null);
-        height[animID] = fallingLeft[animFrames-1].getHeight(null);
-        
-		y[animID]+=ySpd[animID];
-		ySpd[animID]+=0.25;
-		
-		
-		
-		
-        /*calculateCorners(x[animID]-characterHitboxDiffs, toyD, animID);
-        if(botRight)
-        {
-        	tempy = (currRow) * tileMap.getTileSize();
-    		y[animID]=tempy;
-    		landed=true;
-        }
-        else if(!botRight)
-        {
-        	calculateCorners(x[animID]+characterHitboxDiffs, toyD, animID);
-        	if(botLeft)
-        	{
-        		tempy = (currRow) * tileMap.getTileSize();
-        		y[animID]=tempy;
-        		landed=true;
-        	}
-        }*/
-		calculateCorners(x[animID], toyD, animID);
-    	if(botLeft || botRight)
-    	{
-    		tempy = (currRow) * tileMap.getTileSize();
-    		y[animID]=tempy;
-    		landed=true;
-    	}
-    	else {
-    		if (inAir) {
-    			tempx = checkLRCollisions(animID, tempx, currCol);
-    		}
-    		x[animID]=tempx;
-    	}
-        
-        if(right){g2d.drawImage(fallingRight[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
-        if(left){g2d.drawImage(fallingLeft[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
-        
-        if(landed)
-    	{
-    		canShoot=true;
-    		standing=false;
-    		falling=false;
-    		canMove=true;
-    		canPerformShockwave=true;
-    		canJump=true;
-    		jumping=false;
-    		if(inAir && left)
-    		{
-    			walk=true;
-    		}
-    		if(inAir && right)
-    		{
-    			walk=true;
-    		}
-    		if (!inAir && !walk)
-    		{
-    			standing=true;
-    		}
-    		inAir=false;
-    		ySpd[animID]=defaultYSpd;
-    		jumpSpeed=defaultJumpSpeed;
-    	}
-    
-    }
-    
-    public void jump(Graphics g, int current)
-    {
-    	int animID=playerID;
+    	int xyID=playerID;
+    	int animID=3;
         int animFrames=1;
         
-        int currRow = tileMap.getRowTile(y[animID]);
-    	int currCol = tileMap.getColTile(x[animID]);
-        int tempx = x[animID];
-    	int tempy = y[animID];
-    	int toyU = y[animID] - defaultJumpSpeed;
-    	
+        int currRow = tileMap.getRowTile(y[xyID]);
+    	int currCol = tileMap.getColTile(x[xyID]);
+        int tempx = x[xyID];
+    	int tempy = y[xyID];
+    	int toyU = y[xyID] - defaultJumpSpeed;
+    	long passedTime;
     	if(Dpressed && !Apressed){right=true; left=false;}
         if(Apressed && !Dpressed){left=true; right=false;}
         
-        Image[] jumpingRight = new Image[animFrames];
-        ImageIcon[] jumpingRightImages = new ImageIcon[animFrames];
-        
-        Image[] jumpingLeft = new Image[animFrames];
-        ImageIcon[] jumpingLeftImages = new ImageIcon[animFrames];
         
         Graphics2D g2d = (Graphics2D) g;
         
-        for(int i=0;i<animFrames;i++)
-        {
-        	jumpingRightImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/jumping/audiomancer_jump_right.png"));
-        	jumpingRight[i] = jumpingRightImages[i].getImage();
-            
-        	jumpingLeftImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/audiomancer/jumping/audiomancer_jump_left.png"));
-        	jumpingLeft[i] = jumpingLeftImages[i].getImage();
-        }	
+        width[xyID] = jumpingImages[animFrames-1].getWidth(null);
+        height[xyID] = jumpingImages[animFrames-1].getHeight(null);
         
-        width[animID] = jumpingLeft[animFrames-1].getWidth(null);
-        height[animID] = jumpingLeft[animFrames-1].getHeight(null);
+        passedTime = System.nanoTime() - prevTimes[animID];
+        
+        if(passedTime/125000000 >= 1)
+        {
+            current[animID]++;
+            wait[animID]=false;
+            passedTime=0;
+            prevTimes[animID]=System.nanoTime();
+        }
+        
+        if(current[animID]>=animFrames)
+        {
+            current[animID]=animFrames-1;
+        }
         
         jumpSpeed-=0.2;
 		if(jumpSpeed<=0)
 		{
+			jump=false;
 			jumping=false;
 			falling=true;
+			canFall=false;
+			prevTimes[7]=System.nanoTime();
 		}
 		
-		if (inAir) {
-			tempx = checkLRCollisions(animID, tempx, currCol);
+		if (walking) {
+			tempx = checkLRCollisions(xyID, tempx, currCol);
 		}
-		x[animID]=tempx;
+		x[xyID]=tempx;
 		
-		calculateCorners(x[animID], toyU,animID);
+		calculateCorners(x[xyID], toyU, xyID);
 		if(topRight || topLeft)
 		{
-			
 			tempy = ((currRow * tileMap.getTileSize()));
 			falling=true;
 			jumping=false;
+			jump=false;
+			canFall=false;
+			prevTimes[7]=System.nanoTime();
         }
         else
         {
             tempy-=jumpSpeed;
         }
 	      
-	    y[animID]=tempy;
+	    y[xyID]=tempy;
 	
-        if(right){g2d.drawImage(jumpingRight[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
-        if(left){g2d.drawImage(jumpingLeft[current],x[animID]+tileMap.getX(),y[animID]+tileMap.getY(),this);}
+        if(left){g2d.drawImage(jumpingImages[0],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+        if(right){g2d.drawImage(jumpingImages[1],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
     
     }
     
-    public void drawBox(Graphics g)
+    public void falling(Graphics g)
     {
+    	int xyID=playerID;
+    	int animID=4;
+        int animFrames=7;
+    	int currRow = tileMap.getRowTile(y[xyID]);
+    	int currCol = tileMap.getColTile(x[xyID]);
+        int tempx = x[xyID];
+    	int tempy = y[xyID];
+    	int toyD = y[xyID] + (int)ySpd[xyID];
+    	long passedTime;
+    	long passedTime1;
+    	inAir=true;
+    	landed=false;
+    	if(Dpressed && !Apressed){right=true; left=false;}
+        if(Apressed && !Dpressed){left=true; right=false;}
+    	
         
-    	g.setColor(Color.GREEN);
-    	g.drawRect(x[playerID], y[playerID], 31, 31);
-    	g.drawRect(x[playerID]-xSpd[playerID], y[playerID]-(int)jumpSpeed, 31+xSpd[playerID], 31+(int)jumpSpeed);
-    	g.setColor(Color.RED);
-    	g.drawRect(x[playerID]+xSpd[playerID], y[playerID]-(int)jumpSpeed, 31-xSpd[playerID] , 31+(int)jumpSpeed);
-    	//g.drawRect(x[playerID]-xSpd-(width[playerID]/2), y[playerID], 32, 32);
+        Graphics2D g2d = (Graphics2D) g;
+        
+        width[xyID] = fallingImages[0][animFrames-1].getWidth(null);
+        height[xyID] = fallingImages[0][animFrames-1].getHeight(null);
+        
+        
+        passedTime = System.nanoTime() - prevTimes[animID];
+        if(current[animID]==1){wait[animID]=true;}
+        if(wait[animID] && passedTime/500000000 <1){}
+        
+        else if(passedTime/125000000>=1)
+        {
+            current[animID]++;
+            wait[animID]=false;
+            passedTime=0;
+            prevTimes[animID]=System.nanoTime();
+        }
+        
+        if(current[animID]>=animFrames)
+        {
+            current[animID]=animFrames-1;
+        }
+        
+        passedTime1 = System.nanoTime() - prevTimes[7];
+        if(passedTime1/60000000>=1)
+        {
+        	prevTimes[7]=System.nanoTime();
+        	canFall=true;
+        }
+        
+        if(canFall)
+        {
+        	y[xyID]+=ySpd[xyID];
+    		ySpd[xyID]+=0.25;
+        }
+		calculateCorners(x[xyID], toyD, xyID);
+    	if(botLeft || botRight)
+    	{
+    		tempy = (currRow) * tileMap.getTileSize();
+    		y[xyID]=tempy;
+    		landed=true;
+    	}
+    	
+    		if (inAir && walking) {
+    			tempx = checkLRCollisions(xyID, tempx, currCol);
+    		}
+    		x[xyID]=tempx;
+    	
+        
+        if(left){g2d.drawImage(fallingImages[0][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+        if(right){g2d.drawImage(fallingImages[1][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+        
+        if(landed)
+    	{
+        	current[animID]=0;
+    		falling=false;
+    		inAir=false;
+    		ySpd[xyID]=defaultYSpd;
+    		jumpSpeed=defaultJumpSpeed;
+    	}
+    
+    }
+    
+    public void character_shoot(Graphics g)
+    {
+    	int xyID=playerID;
+    	int animID=5;
+        int animFrames=12;
+        long passedTime;
+        Graphics2D g2d = (Graphics2D) g;
+        width[xyID] = shootingImages[0][animFrames-1].getWidth(null);
+        height[xyID] = shootingImages[0][animFrames-1].getHeight(null);
+        
+        passedTime = System.nanoTime() - prevTimes[animID];
+        
+        if(passedTime/32000000 >= 1)
+        {
+            current[animID]++;
+            wait[animID]=false;
+            passedTime=0;
+            prevTimes[animID]=System.nanoTime();
+        }
+        
+        if(current[animID]>=animFrames)
+        {
+        	shooting=false;
+        	shoot=false;
+        	attacking=false;
+            current[animID]=0;
+        }
+        
+        if(current[animID]==8)
+        {
+        	current[animID]++;
+        	shootBolt=true;
+        }
+        
+        if(left){g2d.drawImage(shootingImages[0][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+        if(right){g2d.drawImage(shootingImages[1][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
     }
     
     public Rectangle getBounds(int ID)
     {
         return new Rectangle((int)x[ID], (int)y[ID], width[ID], height[ID]);
     }
+  
+    public boolean getShootBolt(){return shootBolt;}
     public int getWidth(int ID){return width[ID];}
     public int getHeight(int ID){return height[ID];}
     public int getX(int ID){return x[ID];}
@@ -692,31 +756,18 @@ public class Audiomancer extends JPanel implements KeyListener
     public boolean getDPressed(){return Dpressed;}
     public boolean getAPressed(){return Apressed;}
     public boolean walking(){return(walk);}
-    public boolean characterShooting(){return(characterShoot);}
     public boolean shooting(){return(shoot);}
-    public boolean animatingShockwave(){return(shockwave_animation);}
-    public boolean performingShockwave(){return(performShockwave);}
     public boolean characterRight(){return(right);}
     public boolean characterLeft(){return(left);}
     public boolean characterStanding(){return(standing);}
     public boolean isFalling(){return falling;}
     public boolean isJumping(){return jumping;}
-    public boolean shootingLeft(){return shootLeft;}
-    public boolean shootingRight(){return shootRight;}
-    public void setCanShoot(boolean i){canShoot=i;}
     public void setShooting(boolean i){shoot=i;}
-    public void setCharacterShooting(boolean i){characterShoot=i;}
     public void setWalking(boolean i){walk=i;}
     public void setLeft(boolean i){left=i;}
     public void setRight(boolean i){right=i;}
-    public void setCanMove(boolean i){canMove=i;}
-    public void setShockwaveAnimation(boolean i){shockwave_animation=i;}
-    public void setPerformShockwave(boolean i){performShockwave=i;}
-    public void setCanPerformShockwave(boolean i){canPerformShockwave=i;}
-    public void setCanJump(boolean i){canJump = i;}
     public void setStanding(boolean i){standing=i;}
     public void setFalling(boolean i){falling = i;}
     public void setJumping(boolean i){jumping=i;}
-    public void setShootingLeft(boolean i){shootLeft = i;}
-    public void setShootingRight(boolean i){shootRight = i;}
+    public void setShootBolt(boolean i){shootBolt = i;}
 }
