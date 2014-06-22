@@ -80,7 +80,12 @@ public class Audiomancer extends JPanel implements KeyListener
     private boolean Apressed=false;
     private boolean Dpressed=false;
     private boolean[] colliding;
+    private boolean floatCharacter=false;
+    private boolean slow=false;
+    private boolean canFloat=true;
     
+    private double floatSpeed;
+    private double defaultFloatSpeed=2;
     private double jumpSpeed;
     private int[] xSpd;
     private double[] ySpd;
@@ -91,6 +96,7 @@ public class Audiomancer extends JPanel implements KeyListener
     
     private boolean topLeft, topRight, botLeft, botRight;
     private boolean topLeftLeft, botLeftLeft, topRightRight, botRightRight;
+    private boolean topLeftF, topRightF, botLeftF, botRightF;
     
     public Audiomancer(TileMap tm)
     {
@@ -108,6 +114,7 @@ public class Audiomancer extends JPanel implements KeyListener
         wait = new boolean[animationCount];
         current = new int[animationCount];
         jumpSpeed = defaultJumpSpeed;
+        floatSpeed = 0;
         
         for(int i=0;i<animationCount;i++)
         {
@@ -219,8 +226,8 @@ public class Audiomancer extends JPanel implements KeyListener
         
         if(KeyEvent.VK_E == _e)
         {
-        	x[playerID]=640;
-	        y[playerID]=(720/2);
+        	x[playerID]=33;
+	        y[playerID]=(tileMap.getHeight());
         }
         if(KeyEvent.VK_SHIFT == _e)
         {
@@ -350,19 +357,15 @@ public class Audiomancer extends JPanel implements KeyListener
     	topRightRight = false;
     	botRightRight = false;
     	
-    	
-    	
-    	
-    	
     	int leftTile = tileMap.getColTile((int) (_x)+characterHitboxDiffs+1);
         int rightTile = tileMap.getColTile((int) (_x +width[animID])-xSpd[animID]-characterHitboxDiffs+1);
         int topTile = tileMap.getRowTile((int) (_y));
-        int bottomTile = tileMap.getRowTile((int) (_y +height[animID])-(int)ySpd[animID]);
+        int bottomTile = tileMap.getRowTile((int) (_y +height[animID])-Math.abs((int)ySpd[animID]));
         
-        topLeft = tileMap.getTile(topTile, leftTile) == 0 || tileMap.getTile(topTile, leftTile) == 2 || tileMap.getTile(topTile, leftTile) == 3 || tileMap.getTile(topTile, leftTile) == 4 || tileMap.getTile(topTile, leftTile) == 5 || tileMap.getTile(topTile, leftTile) == 6;
-        topRight = tileMap.getTile(topTile, rightTile) == 0 || tileMap.getTile(topTile, rightTile) == 2 || tileMap.getTile(topTile, rightTile) == 3 || tileMap.getTile(topTile, rightTile) == 4 || tileMap.getTile(topTile, rightTile) == 5 || tileMap.getTile(topTile, rightTile) == 6;
-        botLeft = tileMap.getTile(bottomTile, leftTile) == 0 || tileMap.getTile(bottomTile, leftTile) == 2 || tileMap.getTile(bottomTile, leftTile) == 3 || tileMap.getTile(bottomTile, leftTile) == 4 || tileMap.getTile(bottomTile, leftTile) == 5 || tileMap.getTile(bottomTile, leftTile) == 6;
-        botRight = tileMap.getTile(bottomTile, rightTile) == 0 || tileMap.getTile(bottomTile, rightTile) == 2 || tileMap.getTile(bottomTile, rightTile) == 3 || tileMap.getTile(bottomTile, rightTile) == 4 || tileMap.getTile(bottomTile, rightTile) == 5 || tileMap.getTile(bottomTile, rightTile) == 6;
+        topLeft = tileMap.getTile(topTile, leftTile) == 0 || tileMap.getTile(topTile, leftTile) == 2 || tileMap.getTile(topTile, leftTile) == 3 || tileMap.getTile(topTile, leftTile) == 4 || tileMap.getTile(topTile, leftTile) == 5;
+        topRight = tileMap.getTile(topTile, rightTile) == 0 || tileMap.getTile(topTile, rightTile) == 2 || tileMap.getTile(topTile, rightTile) == 3 || tileMap.getTile(topTile, rightTile) == 4 || tileMap.getTile(topTile, rightTile) == 5;
+        botLeft = tileMap.getTile(bottomTile, leftTile) == 0 || tileMap.getTile(bottomTile, leftTile) == 2 || tileMap.getTile(bottomTile, leftTile) == 3 || tileMap.getTile(bottomTile, leftTile) == 4 || tileMap.getTile(bottomTile, leftTile) == 5;
+        botRight = tileMap.getTile(bottomTile, rightTile) == 0 || tileMap.getTile(bottomTile, rightTile) == 2 || tileMap.getTile(bottomTile, rightTile) == 3 || tileMap.getTile(bottomTile, rightTile) == 4 || tileMap.getTile(bottomTile, rightTile) == 5;
         
         
         
@@ -388,9 +391,26 @@ public class Audiomancer extends JPanel implements KeyListener
         
         
     }
-    
+    public void getFloatTile(int _x, int _y, int animID)
+    {
+    	int leftTile = tileMap.getColTile((int) (_x)+characterHitboxDiffs+1);
+        int rightTile = tileMap.getColTile((int) (_x+9));
+        int topTile = tileMap.getRowTile((int) (_y));
+        int bottomTile = tileMap.getRowTile((int) (_y +height[animID]));
+        
+        topLeftF = tileMap.getTile(topTile, leftTile) == 7 || tileMap.getTile(topTile, leftTile) == 6;
+        topRightF = tileMap.getTile(topTile, rightTile) == 7 || tileMap.getTile(topTile, rightTile) == 6;
+        botLeftF = tileMap.getTile(bottomTile, leftTile) == 7 || tileMap.getTile(bottomTile, leftTile) == 6;
+        botRightF = tileMap.getTile(bottomTile, rightTile) == 7 || tileMap.getTile(bottomTile, rightTile) == 6;
+        
+    }
     public void update()
     {
+    	getFloatTile(x[playerID], y[playerID], playerID);
+    	if(topLeftF || topRightF || botLeftF || botRightF)
+    	{
+    		floatCharacter=true;
+    	}
     	if(!inAir && walking && !attacking){walk=true;}
     	else{walk=false;}
     	
@@ -403,11 +423,16 @@ public class Audiomancer extends JPanel implements KeyListener
     		jumping=true;
     		inAir=true;
     	}
+    	
     }
     
     public void paint(Graphics g)
     {
-    	if(walk)
+    	if (floatCharacter)
+    	{
+    		floating(g);
+    	}
+    	else if(walk)
     	{
     		walk(g);
     	}
@@ -461,7 +486,6 @@ public class Audiomancer extends JPanel implements KeyListener
         {
             current[animID]=0;
         }
-        
         calculateCorners(x[xyID], toyD, xyID);
         if(botRight || botLeft){}
         else
@@ -469,6 +493,7 @@ public class Audiomancer extends JPanel implements KeyListener
         	//System.out.println("falling triggered "+botLeft+" "+botRight);
         	falling=true;
         }
+        
         if(left){g2d.drawImage(standingImages[0][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
         if(right){g2d.drawImage(standingImages[1][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
     }
@@ -505,19 +530,17 @@ public class Audiomancer extends JPanel implements KeyListener
         {
             current[animID]=0;
         }
-        
-        
         calculateCorners(x[xyID]+xSpd[xyID], toyD, xyID);
-    	if(!botLeft)
+        if(!botLeft)
         {
-    		calculateCorners(x[xyID]-xSpd[xyID], toyD, xyID);
-    		if(!botRight)
-    		{
-    			falling=true;
-            	inAir=true;
-    		}
+        	calculateCorners(x[xyID]-xSpd[xyID], toyD, xyID);
+        	if(!botRight)
+        	{
+        		falling=true;
+        		inAir=true;
+        	}
         }
-    	
+        
         tempx = checkLRCollisions(xyID, tempx, currCol);
         x[xyID]=tempx;
         
@@ -625,9 +648,9 @@ public class Audiomancer extends JPanel implements KeyListener
         passedTime = System.nanoTime() - prevTimes[animID];
         if(current[animID]==1){wait[animID]=true;}
         if(wait[animID] && passedTime/500000000 <1){}
-        
         else if(passedTime/125000000>=1)
         {
+        	canFloat=true;
             current[animID]++;
             wait[animID]=false;
             passedTime=0;
@@ -642,22 +665,30 @@ public class Audiomancer extends JPanel implements KeyListener
         passedTime1 = System.nanoTime() - prevTimes[7];
         if(passedTime1/60000000>=1)
         {
-        	prevTimes[7]=System.nanoTime();
+        	prevTimes[9]=System.nanoTime();
         	canFall=true;
         }
         
         if(canFall)
         {
+        	if(ySpd[xyID]<5)
+        	{
+        		ySpd[xyID]+=0.25;
+        	}
         	y[xyID]+=ySpd[xyID];
-    		ySpd[xyID]+=0.25;
         }
-		calculateCorners(x[xyID], toyD, xyID);
-    	if(botLeft || botRight)
-    	{
-    		tempy = (currRow) * tileMap.getTileSize();
-    		y[xyID]=tempy;
-    		landed=true;
-    	}
+        getFloatTile(x[xyID],y[xyID],xyID);
+        if(topLeftF || topRightF || botLeftF || botRightF){}
+        else
+        {
+			calculateCorners(x[xyID], toyD, xyID);
+	    	if(botLeft || botRight)
+	    	{
+	    		tempy = (currRow) * tileMap.getTileSize();
+	    		y[xyID]=tempy;
+	    		landed=true;
+	    	}
+        }
     	
     		if (inAir && walking) {
     			tempx = checkLRCollisions(xyID, tempx, currCol);
@@ -715,6 +746,55 @@ public class Audiomancer extends JPanel implements KeyListener
         
         if(left){g2d.drawImage(shootingImages[0][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
         if(right){g2d.drawImage(shootingImages[1][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+    }
+    
+    public void floating(Graphics g)
+    {
+    	int xyID=playerID;
+    	int animID=6;
+        int animFrames=1;
+        
+        int currRow = tileMap.getRowTile(y[xyID]);
+    	int currCol = tileMap.getColTile(x[xyID]);
+        int tempx = x[xyID];
+    	int tempy = y[xyID];
+    	int toyU = y[xyID] - defaultJumpSpeed;
+    	canFall=false;
+    	if(Dpressed && !Apressed){right=true; left=false;}
+        if(Apressed && !Dpressed){left=true; right=false;}
+        Graphics2D g2d = (Graphics2D) g;
+        width[xyID] = jumpingImages[animFrames-1].getWidth(null);
+        height[xyID] = jumpingImages[animFrames-1].getHeight(null);
+        
+        getFloatTile(x[playerID], y[playerID], playerID);
+    	if(topLeftF || topRightF || botLeftF || botRightF){}
+    	else{floatCharacter=false; canFloat=false;}
+    	
+        
+		if(floatSpeed<=defaultFloatSpeed)
+		{
+			floatSpeed+=0.2;
+		}
+		
+		if (walking) {
+			tempx = checkLRCollisions(xyID, tempx, currCol);
+		}
+		x[xyID]=tempx;
+		
+		calculateCorners(x[xyID], toyU, xyID);
+		if(topRight || topLeft)
+		{
+			tempy = ((currRow * tileMap.getTileSize()));
+        }
+        else if(canFloat)
+        {
+            tempy-=floatSpeed;
+        }
+	      
+	    y[xyID]=tempy;
+	
+        if(left){g2d.drawImage(jumpingImages[0],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+        if(right){g2d.drawImage(jumpingImages[1],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
     }
     
     public Rectangle getBounds(int ID)
