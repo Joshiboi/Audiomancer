@@ -14,20 +14,19 @@ public class TileMap
     private int[][] map;
     private int mapWidth;
     private int mapHeight;
-    private int tileCount=6;
+    private int tileCount;
     private int heightTile;
     private int widthTile;
+    
+    //fan tile variables
+    private FanTile fanTile;
+    private long prevTime= System.nanoTime();
+	private long passedTime;
+	private int current;
+	private int animFrames=8;
     public TileMap(String s, int tileSize)
     {
         this.tileSize = tileSize;
-        
-        tiles = new Image[tileCount];
-        tileImages = new ImageIcon[tileCount];
-        for(int i=0;i<tileCount;i++)
-        {
-        	tileImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/environment/tiles/tile"+(i)+".png"));
-        	tiles[i] = tileImages[i].getImage();
-        }
         
         try
         {
@@ -37,6 +36,14 @@ public class TileMap
             mapHeight = Integer.parseInt(br.readLine());
             tileCount = Integer.parseInt(br.readLine());
             map = new int[mapHeight][mapWidth];
+            
+            tiles = new Image[tileCount];
+            tileImages = new ImageIcon[tileCount];
+            for(int i=0;i<tileCount;i++)
+            {
+            	tileImages[i] = new ImageIcon(this.getClass().getResource("/resources/textures/environment/tiles/tile"+(i)+".png"));
+            	tiles[i] = tileImages[i].getImage();
+            }
             
             String delimiters = " ";
             for(int row=0;row<mapHeight;row++)
@@ -88,14 +95,30 @@ public class TileMap
     {
         for(int row=0;row<mapHeight;row++)
         {
-        	
             for(int col=0;col<mapWidth;col++)
             {
+            	passedTime = System.nanoTime() - prevTime;
+        		if(passedTime/41666666 >= 1)
+                {
+                    current++;
+                    passedTime=0;
+                    prevTime=System.nanoTime();
+                }
+        		if(current>=animFrames)
+        		{
+        			current=0;
+        		}
                 int rc = map[row][col];
                 if(rc==4 || rc==3)
                 {
                 	g.drawImage(tiles[1], x + col * tileSize, (y + row * tileSize),null);
                 	g.drawImage(tiles[rc], x + col * tileSize, (y + row * tileSize),null);
+                }
+                else if(rc==6)
+                {
+                	g.drawImage(tiles[1], x + col * tileSize, (y + row * tileSize),null);
+                	fanTile = new FanTile(x + col * tileSize, (y + row * tileSize),current);
+                	fanTile.draw(g);
                 }
                 else {g.drawImage(tiles[rc], x + col * tileSize, (y + row * tileSize),null);}
             }
