@@ -20,10 +20,19 @@ public class TileMap
     
     //fan tile variables
     private FanTile fanTile;
-    private long prevTime= System.nanoTime();
-	private long passedTime;
-	private int current;
-	private int animFrames=8;
+    private long prevTimeFan=System.nanoTime();
+	private long passedTimeFan;
+	private int currentFan;
+	private int animFramesFan=8;
+	
+	//door tile variables
+	private DoorTile doorTile;
+	private long prevTimeDoor = System.nanoTime();
+	private long passedTimeDoor;
+	private int currentDoor;
+	private boolean doorState;
+	private int animFramesDoor=11;
+	
     public TileMap(String s, int tileSize)
     {
         this.tileSize = tileSize;
@@ -90,23 +99,38 @@ public class TileMap
     	return((heightTile*tileSize)-tileSize);
     }
     public int getWidth(){return mapWidth;}
-    
+    public void setDoorState(boolean i){doorState = i;}
     public void draw(Graphics2D g)
     {
         for(int row=0;row<mapHeight;row++)
         {
             for(int col=0;col<mapWidth;col++)
             {
-            	passedTime = System.nanoTime() - prevTime;
-        		if(passedTime/41666666 >= 1)
+            	passedTimeFan = System.nanoTime() - prevTimeFan;
+        		if(passedTimeFan/41666666 >= 1)
                 {
-                    current++;
-                    passedTime=0;
-                    prevTime=System.nanoTime();
+                    currentFan++;
+                    passedTimeFan=0;
+                    prevTimeFan=System.nanoTime();
                 }
-        		if(current>=animFrames)
+        		if(currentFan>=animFramesFan)
         		{
-        			current=0;
+        			currentFan=0;
+        		}
+        		if(doorState)
+        		{
+	        		passedTimeDoor = System.nanoTime() - prevTimeDoor;
+	        		if(passedTimeDoor/10000000 >=1)
+	        		{
+	        			currentDoor++;
+	        			passedTimeDoor=0;
+	        			prevTimeDoor=System.nanoTime();
+	        		}
+        		}
+        		
+        		if(currentDoor>=animFramesDoor)
+        		{
+        			currentDoor=11;
         		}
                 int rc = map[row][col];
                 if(rc==4 || rc==3)
@@ -117,8 +141,14 @@ public class TileMap
                 else if(rc==6)
                 {
                 	g.drawImage(tiles[1], x + col * tileSize, (y + row * tileSize),null);
-                	fanTile = new FanTile(x + col * tileSize, (y + row * tileSize),current);
+                	fanTile = new FanTile(x + col * tileSize, (y + row * tileSize),currentFan);
                 	fanTile.draw(g);
+                }
+                else if(rc==8)
+                {
+                	g.drawImage(tiles[1], x + col * tileSize, (y + row * tileSize),null);
+                	doorTile = new DoorTile(x + col * tileSize, (y + row * tileSize),currentDoor,doorState);
+                	doorTile.draw(g);
                 }
                 else {g.drawImage(tiles[rc], x + col * tileSize, (y + row * tileSize),null);}
             }
