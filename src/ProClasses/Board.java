@@ -1,5 +1,6 @@
 package ProClasses;
 import java.applet.AudioClip;
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -17,17 +18,14 @@ import javax.swing.JPanel;
 import javax.swing.Timer;
 import javax.swing.ImageIcon;
 
-public class Board extends JPanel implements ActionListener
+public class Board extends JPanel
 {
 	private static final long serialVersionUID = 1105451800805702002L;
 	//class instance declarations
 	private MainMenu mainMenu;
 	private Audiomancer audiomancer;
 	private Psychomancer psychomancer;
-	private Timer timer;
 	private TileMap tileMap;
-	private static AudioClip stepSound;
-
 
 	private Audiomancer_bolt[] bolts;
 	private int maxBolts = 1000;
@@ -43,6 +41,11 @@ public class Board extends JPanel implements ActionListener
 	private static long passedTime;
 	private static int fps=0;
 	private static int frames=0;
+	
+	private static long paintPrevTime=System.nanoTime();
+	private static long paintPassedTime;
+	private static int paintFps;
+	private static int paintFrames;
 
 	//animation variables
 	private long[] prevTimes;
@@ -79,7 +82,6 @@ public class Board extends JPanel implements ActionListener
 		mainMenu = new MainMenu();
 		bolts = new Audiomancer_bolt[maxBolts];
 		tileMap = new TileMap("testmap.txt", 32);
-		timer = new Timer(16, this);
 		audiomancer = new Audiomancer(tileMap);
 		audiomancer.load();
 
@@ -93,6 +95,9 @@ public class Board extends JPanel implements ActionListener
 			buttons[0]= new Button((width/2)-128,(height/2)-100);
 			buttons[1] = new Button((width/2)-128,(height/2)+100);
 		}
+		
+		repaintThread();
+		updateThread();
 	}
 
 	public void destroyBolt(int target)
@@ -101,136 +106,174 @@ public class Board extends JPanel implements ActionListener
 		currentBolts--;
 	}
 
-	private void update()
+	public void updateThread()
 	{
+		Thread thread = new Thread()
+		{
+			public void run()
+			{
+				while(true)
+				{
+					try{sleep(1);}
+					catch(Exception c){}
+					passedTime = System.nanoTime() - prevTime;
+					if(passedTime/1000000000 >= 1)
+					{
+						//System.out.println("one second passed");
+						fps=frames;
+						prevTime = System.nanoTime();
+						passedTime = 0;
+						frames=0;
+					}
+					frames++;
+					tileMap.update();
+					if(buttons[0].getHasPressed())
+					{
+						if(inMainMenu)
+						{
+							inMainMenu=false;
+							playAudiomancer=true;
+							playSound("/music/soundTrack1.au",true);
+						}
+						else if(inCharacterSelect)
+						{
+							audiomancer = new Audiomancer(tileMap);
+							audiomancer.load();
+							psychomancer=null;
+							playPsychomancer=false;
+							inCharacterSelect=false;
+							playAudiomancer=true;
+							playSound("/music/soundTrack1.au",true);
+						}
+					}
+
+					if(buttons[1].getHasPressed())
+					{
+						//this means the "character select" button has been pressed
+						if(inMainMenu)
+						{
+							inMainMenu=false;
+							inCharacterSelect=true;
+							currentButtons=2;
+							buttons[0]= new Button((width/2)-buttons[0].getWidth()-20,(height/2)+64);
+							buttons[1] = new Button((width/2)+buttons[1].getWidth()/2-20,(height/2)+64);
+						}
+						//this means the "psychomancer" button has been pressed inside character select
+						else if(inCharacterSelect)
+						{
+							psychomancer = new Psychomancer(tileMap);
+							psychomancer.load();
+							audiomancer=null;
+							playAudiomancer=false;
+							inCharacterSelect=false;
+							playPsychomancer=true;
+							playSound("/music/soundTrack1.au",true);
+						}
+					}
+
+					for(int i=0;i<currentBolts;i++)
+					{
+						if(bolts[i].isColliding())
+						{
+							destroyBolt(i);
+						}
+					}
+
+
+					if(audiomancer!=null)
+					{
+						tileMap.setX(width/2 - audiomancer.getX(0));
+						tileMap.setY(height/2 - audiomancer.getY(0));
+						if(audiomancer.getShootBolt())
+						{
+							if(audiomancer.characterLeft())
+							{
+								if(currentBolts < maxBolts )
+								{
+									bolts[currentBolts] = new Audiomancer_bolt(tileMap, audiomancer.getX(0), audiomancer.boltY(), -10);
+									currentBolts++;
+									audiomancer.setShootBolt(false);
+								}
+							}
+							else if(audiomancer.characterRight())
+							{
+								if(currentBolts < maxBolts )
+								{
+									bolts[currentBolts] = new Audiomancer_bolt(tileMap, audiomancer.getX(0)+audiomancer.getWidth(0), audiomancer.boltY(), 10);
+									currentBolts++;
+									audiomancer.setShootBolt(false);
+								}
+							}
+						}
+						audiomancer.update();
+					}
+
+					if(psychomancer!=null)
+					{
+						tileMap.setX(width/2 - psychomancer.getX(0));
+						tileMap.setY(height/2 - psychomancer.getY(0));
+						if(psychomancer.getShootBolt())
+						{
+							if(psychomancer.characterLeft())
+							{
+								if(currentBolts < maxBolts )
+								{
+									bolts[currentBolts] = new Audiomancer_bolt(tileMap, psychomancer.getX(0), psychomancer.boltY(), -10);
+									currentBolts++;
+									psychomancer.setShootBolt(false);
+								}
+							}
+							else if(psychomancer.characterRight())
+							{
+								if(currentBolts < maxBolts )
+								{
+									bolts[currentBolts] = new Audiomancer_bolt(tileMap, psychomancer.getX(0)+psychomancer.getWidth(0), psychomancer.boltY(), 10);
+									currentBolts++;
+									psychomancer.setShootBolt(false);
+								}
+							}
+						}
+						psychomancer.update();
+					}
+				}
+
+			}
+		};
+		try{thread.start();}
+		catch(Exception e){}
 		
-		if(buttons[0].getHasPressed())
-		{
-			if(inMainMenu)
-			{
-				inMainMenu=false;
-				playAudiomancer=true;
-			}
-			else if(inCharacterSelect)
-			{
-				audiomancer = new Audiomancer(tileMap);
-				audiomancer.load();
-				psychomancer=null;
-				playPsychomancer=false;
-				inCharacterSelect=false;
-				playAudiomancer=true;
-			}
-		}
-
-		if(buttons[1].getHasPressed())
-		{
-			//this means the "character select" button has been pressed
-			if(inMainMenu)
-			{
-				inMainMenu=false;
-				inCharacterSelect=true;
-				currentButtons=2;
-				buttons[0]= new Button((width/2)-buttons[0].getWidth()-20,(height/2)+64);
-				buttons[1] = new Button((width/2)+buttons[1].getWidth()/2-20,(height/2)+64);
-			}
-			//this means the "psychomancer" button has been pressed inside character select
-			else if(inCharacterSelect)
-			{
-				psychomancer = new Psychomancer(tileMap);
-				psychomancer.load();
-				audiomancer=null;
-				playAudiomancer=false;
-				inCharacterSelect=false;
-				playPsychomancer=true;
-			}
-		}
-
-		for(int i=0;i<currentBolts;i++)
-		{
-			if(bolts[i].isColliding())
-			{
-				destroyBolt(i);
-			}
-		}
-
-
-		if(audiomancer!=null)
-		{
-			tileMap.setX(width/2 - audiomancer.getX(0));
-			tileMap.setY(height/2 - audiomancer.getY(0));
-			if(audiomancer.getShootBolt())
-			{
-				if(audiomancer.characterLeft())
-				{
-					if(currentBolts < maxBolts )
-					{
-						bolts[currentBolts] = new Audiomancer_bolt(tileMap, audiomancer.getX(0), audiomancer.boltY(), -10);
-						currentBolts++;
-						audiomancer.setShootBolt(false);
-					}
-				}
-				else if(audiomancer.characterRight())
-				{
-					if(currentBolts < maxBolts )
-					{
-						bolts[currentBolts] = new Audiomancer_bolt(tileMap, audiomancer.getX(0)+audiomancer.getWidth(0), audiomancer.boltY(), 10);
-						currentBolts++;
-						audiomancer.setShootBolt(false);
-					}
-				}
-			}
-			if(audiomancer.isStandingInDoor())
-			{
-				tileMap.setDoorState(true);
-			}
-			audiomancer.update();
-		}
-
-		if(psychomancer!=null)
-		{
-			tileMap.setX(width/2 - psychomancer.getX(0));
-			tileMap.setY(height/2 - psychomancer.getY(0));
-			if(psychomancer.getShootBolt())
-			{
-				if(psychomancer.characterLeft())
-				{
-					if(currentBolts < maxBolts )
-					{
-						bolts[currentBolts] = new Audiomancer_bolt(tileMap, psychomancer.getX(0), psychomancer.boltY(), -10);
-						currentBolts++;
-						psychomancer.setShootBolt(false);
-					}
-				}
-				else if(psychomancer.characterRight())
-				{
-					if(currentBolts < maxBolts )
-					{
-						bolts[currentBolts] = new Audiomancer_bolt(tileMap, psychomancer.getX(0)+psychomancer.getWidth(0), psychomancer.boltY(), 10);
-						currentBolts++;
-						psychomancer.setShootBolt(false);
-					}
-				}
-			}
-			psychomancer.update();
-		}
 	}
-	public void actionPerformed(ActionEvent e)
+	
+	public void repaintThread()
 	{
-		passedTime = System.nanoTime() - prevTime;
-		if(passedTime/1000000000 >= 1)
+		Thread repaintThread = new Thread()
 		{
-			//System.out.println("one second passed");
-			fps=frames;
-			prevTime = System.nanoTime();
-			passedTime = 0;
-			frames=0;
-		}
-		frames++;
-
-		update();
-		repaint();
+			public void run()
+			{
+				while(true)
+				{
+					try
+					{
+						sleep(17);
+					}
+					catch(Exception e){}
+					paintPassedTime = System.nanoTime() - paintPrevTime;
+					if(paintPassedTime/1000000000 >= 1)
+					{
+						paintFps=paintFrames;
+						paintPrevTime = System.nanoTime();
+						paintPassedTime = 0;
+						paintFrames=0;
+					}
+					paintFrames++;
+					repaint();
+				}
+			}
+		};
+		try{repaintThread.start();}
+		catch(Exception e){}
 	}
-
+	
 	public void paintComponent(Graphics g)
 	{
 		super.paintComponent(g);
@@ -261,8 +304,10 @@ public class Board extends JPanel implements ActionListener
 				drawBolt(g, i);
 			}
 		}
-
-		g.drawString(""+fps, 35, 67);
+		g.setColor(Color.GREEN);
+		g.drawString("update rate:"+fps, 35, 67);
+		g.drawString("paint rate:"+paintFps, 35, 107);
+		g.setColor(Color.BLACK);
 		if(inMainMenu)
 		{
 			mainMenu.draw(g);
@@ -284,6 +329,9 @@ public class Board extends JPanel implements ActionListener
 			g.drawString("Audiomancer",buttons[0].getX(),buttons[0].getY()+(int)(buttons[0].getHeight()*0.75));
 			g.drawString("Psychomancer",buttons[1].getX(),buttons[1].getY()+(int)(buttons[1].getHeight()*0.75));
 		}
+		
+		/*try{repaintThread.start();}
+		catch(Exception c){}*/
 	}
 	public void drawBolt(Graphics g, int ID)
 	{
@@ -305,6 +353,16 @@ public class Board extends JPanel implements ActionListener
 
 		bolts[ID].draw(g, current[animID]);
 	}
+	public void playSound(String filename, boolean loop)
+	{
+		Thread soundPlayer = new MakeSound(filename, loop);
+		try
+		{
+			soundPlayer.start();
+		}
+		catch(Exception e){}
+		
+	}
 	public static void main(String[] args)
 	{
 		JFrame f = new JFrame("Board");
@@ -314,7 +372,6 @@ public class Board extends JPanel implements ActionListener
 		f.setSize(width, height);
 		f.setVisible(true);
 		f.setResizable(true);
-		window.timer.start();
 	}
 
 	private class TAdapter extends MouseAdapter
