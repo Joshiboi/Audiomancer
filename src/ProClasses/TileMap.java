@@ -17,6 +17,8 @@ public class TileMap
     private int tileCount;
     private int heightTile;
     private int widthTile;
+    private int playerSpawnX;
+    private int playerSpawnY;
     
     //fan tile variables
     private FanTile fanTile;
@@ -92,7 +94,8 @@ public class TileMap
     public int getY(){return y;}
     public void setY(int i){y=i;}
     public void setX(int i){x=i;}
-    
+    public int getPlayerSpawnX(){return playerSpawnX;}
+    public int getPlayerSpawnY(){return playerSpawnY;}
     public int getHeight()
     {
     	heightTile = mapHeight-1;
@@ -100,38 +103,43 @@ public class TileMap
     }
     public int getWidth(){return mapWidth;}
     public void setDoorState(boolean i){doorState = i;}
-    public void draw(Graphics2D g)
+    public void update()
+    {
+    	passedTimeFan = System.nanoTime() - prevTimeFan;
+    	if(passedTimeFan/41666666 >= 1)
+    	{
+    		currentFan++;
+    		passedTimeFan=0;
+    		prevTimeFan=System.nanoTime();
+    	}
+    	if(currentFan>=animFramesFan)
+    	{
+    		currentFan=0;
+    	}
+    	if(doorState)
+    	{
+    		passedTimeDoor = System.nanoTime() - prevTimeDoor;
+    		if(passedTimeDoor/10000000 >=1)
+    		{
+    			currentDoor++;
+    			passedTimeDoor=0;
+    			prevTimeDoor=System.nanoTime();
+    		}
+    	}
+
+    	if(currentDoor>=animFramesDoor)
+    	{
+    		currentDoor=11;
+    	}
+    }
+    
+    public void draw(final Graphics2D g)
     {
         for(int row=0;row<mapHeight;row++)
         {
             for(int col=0;col<mapWidth;col++)
             {
-            	passedTimeFan = System.nanoTime() - prevTimeFan;
-        		if(passedTimeFan/41666666 >= 1)
-                {
-                    currentFan++;
-                    passedTimeFan=0;
-                    prevTimeFan=System.nanoTime();
-                }
-        		if(currentFan>=animFramesFan)
-        		{
-        			currentFan=0;
-        		}
-        		if(doorState)
-        		{
-	        		passedTimeDoor = System.nanoTime() - prevTimeDoor;
-	        		if(passedTimeDoor/10000000 >=1)
-	        		{
-	        			currentDoor++;
-	        			passedTimeDoor=0;
-	        			prevTimeDoor=System.nanoTime();
-	        		}
-        		}
-        		
-        		if(currentDoor>=animFramesDoor)
-        		{
-        			currentDoor=11;
-        		}
+            	
                 int rc = map[row][col];
                 if(rc==4 || rc==3)
                 {
@@ -149,6 +157,12 @@ public class TileMap
                 	g.drawImage(tiles[1], x + col * tileSize, (y + row * tileSize),null);
                 	doorTile = new DoorTile(x + col * tileSize, (y + row * tileSize),currentDoor,doorState);
                 	doorTile.draw(g);
+                }
+                else if(rc==99)
+                {
+                	g.drawImage(tiles[1], x + col * tileSize, (y + row * tileSize),null);
+                	playerSpawnX = col*tileSize;
+                	playerSpawnY = row*tileSize;
                 }
                 else {g.drawImage(tiles[rc], x + col * tileSize, (y + row * tileSize),null);}
             }
