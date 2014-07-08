@@ -96,7 +96,23 @@ public class Board extends JPanel
 			buttons[1] = new Button((width/2)-128,(height/2)+100);
 		}
 		
-		repaintThread();
+		Thread mapThread = new Thread()
+		{
+			public void run()
+			{
+				while(true)
+				{
+					try{sleep(16);}
+					catch(Exception e){}
+					if(audiomancer != null)
+					{
+						tileMap.setX(width/2 - audiomancer.getX(0));
+						tileMap.setY(height/2 - audiomancer.getY(0));
+					}
+				}
+			}
+		};
+	  //  mapThread.start();
 		updateThread();
 	}
 
@@ -114,7 +130,7 @@ public class Board extends JPanel
 			{
 				while(true)
 				{
-					try{sleep(1);}
+					try{sleep(17);}
 					catch(Exception c){}
 					passedTime = System.nanoTime() - prevTime;
 					if(passedTime/1000000000 >= 1)
@@ -179,11 +195,8 @@ public class Board extends JPanel
 						}
 					}
 
-
 					if(audiomancer!=null)
 					{
-						tileMap.setX(width/2 - audiomancer.getX(0));
-						tileMap.setY(height/2 - audiomancer.getY(0));
 						if(audiomancer.getShootBolt())
 						{
 							if(audiomancer.characterLeft())
@@ -205,13 +218,15 @@ public class Board extends JPanel
 								}
 							}
 						}
+						tileMap.setRenderBounds(audiomancer.getX(0), audiomancer.getY(0),width,height);
 						audiomancer.update();
+						/*tileMap.setX(width/2 - audiomancer.getX(0));
+						tileMap.setY(height/2 - audiomancer.getY(0));*/
+						
 					}
 
 					if(psychomancer!=null)
 					{
-						tileMap.setX(width/2 - psychomancer.getX(0));
-						tileMap.setY(height/2 - psychomancer.getY(0));
 						if(psychomancer.getShootBolt())
 						{
 							if(psychomancer.characterLeft())
@@ -233,6 +248,7 @@ public class Board extends JPanel
 								}
 							}
 						}
+						tileMap.setRenderBounds(psychomancer.getX(0), psychomancer.getY(0),width,height);
 						psychomancer.update();
 					}
 				}
@@ -244,46 +260,27 @@ public class Board extends JPanel
 		
 	}
 	
-	public void repaintThread()
-	{
-		Thread repaintThread = new Thread()
-		{
-			public void run()
-			{
-				while(true)
-				{
-					try
-					{
-						sleep(17);
-					}
-					catch(Exception e){}
-					paintPassedTime = System.nanoTime() - paintPrevTime;
-					if(paintPassedTime/1000000000 >= 1)
-					{
-						paintFps=paintFrames;
-						paintPrevTime = System.nanoTime();
-						paintPassedTime = 0;
-						paintFrames=0;
-					}
-					paintFrames++;
-					repaint();
-				}
-			}
-		};
-		try{repaintThread.start();}
-		catch(Exception e){}
-	}
 	
 	public void paintComponent(Graphics g)
 	{
 		super.paintComponent(g);
 		Graphics2D g2d = (Graphics2D) g;
 		g.setFont(new Font("Italic", Font.PLAIN, 40));
-
+		
+		
+		paintPassedTime = System.nanoTime() - paintPrevTime;
+		if(paintPassedTime/1000000000 >= 1)
+		{
+			paintFps=paintFrames;
+			paintPrevTime = System.nanoTime();
+			paintPassedTime = 0;
+			paintFrames=0;
+		}
+		paintFrames++;
 		//draw the map
 		tileMap.draw(g2d);
 
-		if(playAudiomancer)
+		if(audiomancer != null)
 		{
 			//draw audiomancer animations
 			audiomancer.paint(g2d);
@@ -294,7 +291,7 @@ public class Board extends JPanel
 			}
 		}
 
-		if(playPsychomancer)
+		if(psychomancer != null)
 		{
 			//draw audiomancer animations
 			psychomancer.paint(g2d);
@@ -330,6 +327,7 @@ public class Board extends JPanel
 			g.drawString("Psychomancer",buttons[1].getX(),buttons[1].getY()+(int)(buttons[1].getHeight()*0.75));
 		}
 		
+		repaint();
 		/*try{repaintThread.start();}
 		catch(Exception c){}*/
 	}
