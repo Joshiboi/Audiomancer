@@ -35,7 +35,6 @@ import javax.sound.sampled.SourceDataLine;
 public class Audiomancer extends JPanel implements KeyListener
 {
 	private static final long serialVersionUID = 8184458597936033041L;
-	private MakeSound soundPlayer;
 	private TileMap tileMap;
 	private int animationCount;
     private int[] x,y;
@@ -60,8 +59,6 @@ public class Audiomancer extends JPanel implements KeyListener
     private boolean walk=false;
     
     private boolean shoot=false;
-    private boolean characterShoot=false;
-    
     private boolean shooting;
     private boolean walking;
     private boolean jump;
@@ -98,11 +95,13 @@ public class Audiomancer extends JPanel implements KeyListener
     private int defaultYSpd=1;
     private int defaultJumpSpeed=5;
     private int characterHitboxDiffs = 8;
+    private double gravity;
     
     private boolean topLeft, topRight, botLeft, botRight;
     private boolean topLeftLeft, botLeftLeft, topRightRight, botRightRight;
     private boolean topLeftF, topRightF, botLeftF, botRightF;
     private boolean topLeftD, topRightD, botLeftD, botRightD;
+    private boolean topLeftB, topRightB, botLeftB, botRightB;
     
     public Audiomancer(TileMap tm)
     {
@@ -120,6 +119,7 @@ public class Audiomancer extends JPanel implements KeyListener
         current = new int[animationCount];
         jumpSpeed = defaultJumpSpeed;
         floatSpeed = 0;
+        gravity = 0.3;
         
         
     }
@@ -431,9 +431,22 @@ public class Audiomancer extends JPanel implements KeyListener
         botRightD = tileMap.getTile(bottomTile, rightTile) == 8;
     }
     
+    public void getBobbingTile(int _x, int _y, int animID)
+    {
+    	int leftTile = tileMap.getColTile((int) (_x+(width[animID]/2)));
+        int rightTile = tileMap.getColTile((int) (_x+(width[animID]/2)));
+        int topTile = tileMap.getRowTile((int) (_y+(height[animID]/2)-2));
+        int bottomTile = tileMap.getRowTile((int) (_y+(height[animID]/2)-2));
+        
+        topLeftB = tileMap.getTile(topTile, leftTile) == 9;
+        topRightB = tileMap.getTile(topTile, rightTile) == 9;
+        botLeftB = tileMap.getTile(bottomTile, leftTile) == 9;
+        botRightB = tileMap.getTile(bottomTile, rightTile) == 9;
+        
+    }
+    
     public void update()
     {
-    	//System.out.println(+x[playerID]);
     	getDoorTile(x[playerID], y[playerID], playerID);
     	if(topLeftD || topRightD || botLeftD || botRightD)
     	{
@@ -447,6 +460,8 @@ public class Audiomancer extends JPanel implements KeyListener
     			floatCharacter=true;
     		}
     	}
+    	
+    	
     	if(!inAir && walking && !attacking){walk=true;}
     	else{walk=false;}
 
@@ -459,10 +474,34 @@ public class Audiomancer extends JPanel implements KeyListener
     		jumping=true;
     		inAir=true;
     	}
+    	
+    	if (floatCharacter)
+    	{
+    		calcFloating();
+    	}
+    	else if(walk)
+    	{
+    		calcWalking();
+    	}
+    	else if(shoot)
+    	{
+    		calcShooting();
+    	}
+    	else if(falling)
+    	{
+    		calcFalling();
+    	}
+    	else if(jumping)
+    	{
+    		calcJumping();
+    	}
+    	else{calcStanding();}
     }
     
     public void paint(Graphics g)
     {
+    	tileMap.setX(740 - x[playerID]);
+    	tileMap.setY(360 - y[playerID]);
     	if (floatCharacter)
     	{
     		floating(g);
@@ -488,13 +527,21 @@ public class Audiomancer extends JPanel implements KeyListener
   
     public void stand(Graphics g)
     {
-    	
+    	int xyID=playerID;
+    	int animID=1;
+        Graphics2D g2d = (Graphics2D) g;
+        
+        if(left){g2d.drawImage(standingImages[0][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+        if(right){g2d.drawImage(standingImages[1][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+    }
+    
+    public void calcStanding()
+    {
     	int xyID=playerID;
     	int animID=1;
         int animFrames=2;
         int toyD = y[xyID] + (int)ySpd[xyID];
         long passedTime;
-        Graphics2D g2d = (Graphics2D) g;
         
         width[animID] = standingImages[0][animFrames-1].getWidth(null);
         height[animID] = standingImages[0][animFrames-1].getHeight(null);
@@ -526,14 +573,22 @@ public class Audiomancer extends JPanel implements KeyListener
         {
         	falling=true;
         }
-        
-        if(left){g2d.drawImage(standingImages[0][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
-        if(right){g2d.drawImage(standingImages[1][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
     }
     
     public void walk(Graphics g)
     {
-     	if(Dpressed && !Apressed){right=true; left=false;}
+        int xyID=playerID;
+    	int animID=2;
+      
+        Graphics2D g2d = (Graphics2D) g;
+        
+        if(left){g2d.drawImage(walkingImages[0][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+        if(right){g2d.drawImage(walkingImages[1][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+    }
+   
+    public void calcWalking()
+    {
+    	if(Dpressed && !Apressed){right=true; left=false;}
         if(Apressed && !Dpressed){left=true; right=false;}
         
         int xyID=playerID;
@@ -543,9 +598,6 @@ public class Audiomancer extends JPanel implements KeyListener
         int currCol = tileMap.getColTile(x[xyID]);
         int tempx = x[xyID];
         long passedTime;
-        
-        Graphics2D g2d = (Graphics2D) g;
-        
         
         width[xyID] = walkingImages[0][animFrames-1].getWidth(null);
         height[xyID] = walkingImages[0][animFrames-1].getHeight(null);
@@ -576,14 +628,20 @@ public class Audiomancer extends JPanel implements KeyListener
         
         tempx = checkLRCollisions(xyID, tempx, currCol);
         x[xyID]=tempx;
-        
-        if(left){g2d.drawImage(walkingImages[0][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
-        if(right){g2d.drawImage(walkingImages[1][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
     }
     
     public void jump(Graphics g)
     {
-    	
+    	int xyID=playerID;
+    	int animID=3;
+        Graphics2D g2d = (Graphics2D) g;
+        
+        if(left){g2d.drawImage(jumpingImages[0],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+        if(right){g2d.drawImage(jumpingImages[1],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}  
+    }
+    
+    public void calcJumping()
+    {
     	int xyID=playerID;
     	int animID=3;
         int animFrames=1;
@@ -596,13 +654,9 @@ public class Audiomancer extends JPanel implements KeyListener
     	long passedTime;
     	if(Dpressed && !Apressed){right=true; left=false;}
         if(Apressed && !Dpressed){left=true; right=false;}
-        Graphics2D g2d = (Graphics2D) g;
         
         width[xyID] = jumpingImages[animFrames-1].getWidth(null);
         height[xyID] = jumpingImages[animFrames-1].getHeight(null);
-        
-        if(left){g2d.drawImage(jumpingImages[0],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
-        if(right){g2d.drawImage(jumpingImages[1],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}  
         
         passedTime = System.nanoTime() - prevTimes[animID];
         
@@ -644,11 +698,34 @@ public class Audiomancer extends JPanel implements KeyListener
 		}
 		else{tempy-=jumpSpeed;}
 		y[xyID]=tempy;
-		
-    
     }
     
     public void falling(Graphics g)
+    {
+    	int xyID=playerID;
+    	int animID=4;
+        
+        Graphics2D g2d = (Graphics2D) g;
+        
+        try
+        {
+        	getBobbingTile(x[xyID],y[xyID],xyID);
+        }
+        catch(Exception e){}
+        if(topLeftB || topRightB || botLeftB || botRightB)
+        {
+        	if(left){g2d.drawImage(jumpingImages[0],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+            if(right){g2d.drawImage(jumpingImages[1],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+        }
+        else
+        {
+        	if(left){g2d.drawImage(fallingImages[0][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+        	if(right){g2d.drawImage(fallingImages[1][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+    	}
+    
+    }
+    
+    public void calcFalling()
     {
     	int xyID=playerID;
     	int animID=4;
@@ -664,9 +741,6 @@ public class Audiomancer extends JPanel implements KeyListener
     	landed=false;
     	if(Dpressed && !Apressed){right=true; left=false;}
         if(Apressed && !Dpressed){left=true; right=false;}
-    	
-        
-        Graphics2D g2d = (Graphics2D) g;
         
         width[xyID] = fallingImages[0][animFrames-1].getWidth(null);
         height[xyID] = fallingImages[0][animFrames-1].getHeight(null);
@@ -674,23 +748,19 @@ public class Audiomancer extends JPanel implements KeyListener
         //begin float tile check
         try
         {
-        	getFloatTile(x[xyID],y[xyID]+31,xyID);
+        	getBobbingTile(x[xyID],y[xyID],xyID);
         }
         catch(Exception e){}
-        if(topLeftF || topRightF || botLeftF || botRightF)
+        if(topLeftB || topRightB || botLeftB || botRightB)
         {
-        	if(left){g2d.drawImage(jumpingImages[0],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
-            if(right){g2d.drawImage(jumpingImages[1],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
             if(!bobbing)
             {
-            	tempy-=2;
+            	//tempy-=2;
             	bobbing=true;
             }
         }
         else
         {
-        	if(left){g2d.drawImage(fallingImages[0][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
-        	if(right){g2d.drawImage(fallingImages[1][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
         	//System.out.println("currently falling "+x[xyID]);
         	bobbing=false;
         	passedTime = System.nanoTime() - prevTimes[animID];
@@ -732,7 +802,7 @@ public class Audiomancer extends JPanel implements KeyListener
         		playSound("audiomancer/falling/landed/step.au",false);
         		landed=true;
         	}
-        	y[xyID]=tempy;
+            y[xyID]=tempy;
         	if (walking) {
     			ySpd[2] = ySpd[xyID];
     			ySpd[xyID]=9D;
@@ -741,19 +811,16 @@ public class Audiomancer extends JPanel implements KeyListener
     		}
         	x[xyID]=tempx;
         	
-        	
-        	
         }
-        
         //end float tile check
         
         if(bobbing)
         {
-        	tempy+=bobbingSpd;
         	if(bobUp){bobbingSpd-=0.25;}
         	if(bobDown){bobbingSpd+=0.25;}
         	if(bobbingSpd<=-2.25){bobbingSpd=0; bobDown=true; bobUp=false;}
         	if(bobbingSpd>=3){bobbingSpd=0; bobUp=true; bobDown=false;}
+        	tempy+=bobbingSpd;
         	y[xyID]=tempy;
         }
         
@@ -775,16 +842,26 @@ public class Audiomancer extends JPanel implements KeyListener
     		ySpd[xyID]=defaultYSpd;
     		jumpSpeed=defaultJumpSpeed;
     	}
-    
     }
     
     public void character_shoot(Graphics g)
     {
     	int xyID=playerID;
     	int animID=5;
+    	
+    	Graphics2D g2d = (Graphics2D) g;
+        
+        if(left){g2d.drawImage(shootingImages[0][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+        if(right){g2d.drawImage(shootingImages[1][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+    }
+    
+    public void calcShooting()
+    {
+    	int xyID=playerID;
+    	int animID=5;
         int animFrames=12;
         long passedTime;
-        Graphics2D g2d = (Graphics2D) g;
+        
         width[xyID] = shootingImages[0][animFrames-1].getWidth(null);
         height[xyID] = shootingImages[0][animFrames-1].getHeight(null);
         
@@ -815,12 +892,19 @@ public class Audiomancer extends JPanel implements KeyListener
         	current[animID]++;
         	shootBolt=true;
         }
-        
-        if(left){g2d.drawImage(shootingImages[0][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
-        if(right){g2d.drawImage(shootingImages[1][current[animID]],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
     }
     
     public void floating(Graphics g)
+    {
+    	int xyID=playerID;
+    	int animID=6;
+        Graphics2D g2d = (Graphics2D) g;
+        
+        if(left){g2d.drawImage(jumpingImages[0],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+        if(right){g2d.drawImage(jumpingImages[1],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
+    }
+    
+    public void calcFloating()
     {
     	int xyID=playerID;
     	int animID=6;
@@ -836,7 +920,7 @@ public class Audiomancer extends JPanel implements KeyListener
     	inAir=true;
     	if(Dpressed && !Apressed){right=true; left=false;}
         if(Apressed && !Dpressed){left=true; right=false;}
-        Graphics2D g2d = (Graphics2D) g;
+        
         width[xyID] = jumpingImages[animFrames-1].getWidth(null);
         height[xyID] = jumpingImages[animFrames-1].getHeight(null);
         
@@ -868,9 +952,6 @@ public class Audiomancer extends JPanel implements KeyListener
         }
 	      
 	    y[xyID]=tempy;
-	
-        if(left){g2d.drawImage(jumpingImages[0],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
-        if(right){g2d.drawImage(jumpingImages[1],x[xyID]+tileMap.getX(),y[xyID]+tileMap.getY(),this);}
     }
     
     public void playSound(String filename, boolean loop)
