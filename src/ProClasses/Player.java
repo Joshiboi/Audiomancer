@@ -20,6 +20,7 @@ public class Player
 	private ArrayList<Integer> collidableTileY;
 	private ArrayList<Integer> fanTileX;
 	private ArrayList<Integer> fanTileY;
+	private ArrayList<Integer> fanIDs;
 
 	private int x,y,width,height;
 	private int xSpd,ySpd,xVel;
@@ -32,14 +33,14 @@ public class Player
 	private boolean falling, shooting, attacking, inAir;
 	private boolean colV, colH;
 	private int characterHitboxDiffs=8;
-	private int prevX;
+	private int prevX, prevY;
 	private boolean skipFall=false;
 	private boolean foundCorner = false;
 	private double fanDist;
 	private double fanV = 10;
-	private double playerYPos = -32-16;
+	private double playerYPos;
 	private boolean moved=false;
-	int index=-1;
+	
 
 	public Player(TileMap tm, int x, int y)
 	{
@@ -67,8 +68,9 @@ public class Player
 		checkFanCollisions();
 		checkCollisions();
 		prevX = x;
+		prevY = y;
 		if(colH && !colV){y+=ySpd;}
-		else if(colV && !colH){x+=xSpd; if(ySpd<0){jumping=false; ySpd=0; playerYPos=-48; moved=false;}}
+		else if(colV && !colH){x+=xSpd; if(ySpd<0){jumping=false; ySpd=0;}}
 		else if(colV && colH)
 		{
 			if(ySpd<0){jumping=false;}
@@ -83,8 +85,8 @@ public class Player
 		else if(skipFall){skipFall=false;}
 		if(ySpd<-1 && !inAir && !falling)
 		{
-			//fall.setCurrent(0); 
-			//falling=true;
+			fall.setCurrent(0); 
+			falling=true;
 		}
 		if(ySpd>-1){falling=false;}
 	}
@@ -94,15 +96,18 @@ public class Player
 		//render the correct animation for the player state in the correct orientation
 		//true = mirrored images 
 		//false = unchanged images
-		if(left && !jumping && walking){walk.render(x+tmx,y+tmy,false,true);}
-		else if(right && !jumping && walking){walk.render(x+tmx,y+tmy,true,true);}
+		if(left && !jumping && walking && !inAir){walk.render(x+tmx,y+tmy,true,true);}
+		else if(right && !jumping && walking && !inAir){walk.render(x+tmx,y+tmy,false,true);}
 
 		else if(jumping && right){jump.render(x+tmx, y+tmy, true,true);}
 		else if(jumping && left){jump.render(x+tmx, y+tmy, false,true);}
 
 		else if(falling && right){fall.render(x+tmx, y+tmy, true,false);}
 		else if(falling && left){fall.render(x+tmx, y+tmy, false,false);}
-
+		
+		else if(inAir && right){jump.render(x+tmx, y+tmy, true,true);}
+		else if(inAir && left){jump.render(x+tmx, y+tmy, false,true);}
+		
 		else
 		{
 			if(left){stand.render(x+tmx,y+tmy,false,true);}
@@ -150,15 +155,18 @@ public class Player
 				if(prevX == x && !foundCorner){}
 				else if((int)(Math.abs(xSpd))>1 && (int)(Math.abs(ySpd))>1)
 				{
+					System.out.println("corner collision");
 					foundCorner=true;
 					if(Math.abs(xSpd)>Math.abs(ySpd))
 					{
 						y-=ySpd;
+						x-=xSpd;
 						colH=false;
 					}
 					else if(Math.abs(ySpd)>Math.abs(xSpd))
 					{
 						x-=xSpd;
+						y-=ySpd;
 						colV=false;
 					}
 				}
@@ -171,25 +179,29 @@ public class Player
 	}
 	public void checkFanCollisions()
 	{
-		fanDist = 50;
+		int index=0;
+		fanIDs = tileMap.getFanIDs();
 		fanTileX = tileMap.getFanXCoords();
 		fanTileY = tileMap.getFanYCoords();
 		for(int i=0;i<fanTileX.size();i++)
 		{
+			fanDist = tileMap.getTile(fanIDs.get(i)).getFanHeight();
 			if(640+20>fanTileX.get(i) && 640+8<fanTileX.get(i)+32)
 			{
-				if(360+8>fanTileY.get(i) && 360-8<fanTileY.get(i)+(fanDist*32)+16)
+				if(360+8>fanTileY.get(i) && 360-8<fanTileY.get(i)+(fanDist*32)+24)
 				{
+					fanV = tileMap.getTile(fanIDs.get(i)).getVelocity();
 					index = i;
-					ySpd = (int)(Math.round(fanV*( ((fanDist*32 - playerYPos)  / (fanDist*32)) ) ))+2;
-					//System.out.println(((fanDist*32 - playerYPos)  / (fanDist*32)));
-					System.out.println(ySpd);
-					if(ySpd == 2){ySpd=(int)fanV/2;}
-					break;
+					if(ySpd <=2){ySpd+=(int)(Math.round(fanV*( ((fanDist*32 - playerYPos)  / (fanDist*32)) ) ));} //bounce at top of fan
+					else{ySpd = (int)(Math.round(fanV*( ((fanDist*32 - playerYPos)  / (fanDist*32)) ) ))+2;} // move up through fan
+					System.out.println(index);
+					inAir=true;
+					if(index>0){break;}
 				}
 				
 			}
-			if(index>-1){playerYPos=Math.abs(360-fanTileY.get(index)-16);}
+			else if(inAir && ySpd==0){inAir=false;}
+			playerYPos=Math.abs(360-fanTileY.get(index)-32);
 		}
 	}
 	public void getInput()
@@ -210,7 +222,7 @@ public class Player
 		}
 		else{xSpd=0; walking=false;}
 
-		if(Keyboard.isKeyDown(Keyboard.KEY_SPACE) && !jumping)
+		if(Keyboard.isKeyDown(Keyboard.KEY_SPACE) && !jumping && !inAir)
 		{
 			ySpd=jumpSpeed;
 			jumping=true;
@@ -219,7 +231,7 @@ public class Player
 		if(Keyboard.isKeyDown(Keyboard.KEY_E))
 		{
 			x=tileMap.getPlayerSpawnX();
-			y=-tileMap.getPlayerSpawnY();
+			y=tileMap.getPlayerSpawnY();
 		}
 	}
 
@@ -253,7 +265,7 @@ public class Player
 	private void initAnims()
 	{
 		stand= new Animation(32,"Resources/Textures/Players/Audiomancer/Stand/audiomancer_stand_right_", 2,1,1000,3000);
-		walk= new Animation(32,"Resources/Textures/Players/Audiomancer/Walk/audiomancer_walk_right_", 8,-1,83,0);
+		walk= new Animation(32,"Resources/Textures/Players/Audiomancer/Walk/am_walk_", 5,-1,83,0);
 		jump= new Animation(32,"Resources/Textures/Players/Audiomancer/Jump/audiomancer_jump_right_", 1,-1,83,0);
 		fall= new Animation(32,"Resources/Textures/Players/Audiomancer/Jump_Fall/audiomancer_jumpfall_right_", 7,1,125,2000/3);
 		shoot= new Animation(32,"Resources/Textures/Players/Audiomancer/Spell/audiomancer_spell_right_", 12,-1,320,0);
