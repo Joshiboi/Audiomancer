@@ -20,6 +20,7 @@ public class TileMap
 	private int xSpd, ySpd;
 	private ArrayList<Integer> coordX, coordY;
 	private ArrayList<Integer> fanX, fanY;
+	private ArrayList<Integer> fanIDs;
 	public TileMap (String s, int tileSize)
 	{
 		tiles = new ArrayList<Tile>();
@@ -28,7 +29,17 @@ public class TileMap
 		coordY = new ArrayList<Integer>();
 		fanX = new ArrayList<Integer>();
 		fanY = new ArrayList<Integer>();
+		fanIDs = new ArrayList<Integer>();
 		this.tileSize = tileSize;
+		for(int i=0;i<tiles.size();i++)
+		{
+			if(tiles.get(i).getID()==99)
+			{
+				playerSpawnX= (int)tiles.get(i).getX();
+				playerSpawnY= (int)tiles.get(i).getY();
+				System.out.println("("+playerSpawnX+","+playerSpawnY+")");
+			}
+		}
 	}
 
 	public void loadData(String fileName)
@@ -57,7 +68,7 @@ public class TileMap
 						{
 							int tileID=0;
 							int backgroundTileID=-1;
-
+							char[] chars = parsed[k].toCharArray();
 							if(parsed[k].contains(","))
 							{
 								String[] newTileString = parsed[k].split(",");
@@ -66,6 +77,26 @@ public class TileMap
 
 								tiles.add(new Tile(x,y,"tile"+tileID,backgroundTileID));
 								tiles.add(new Tile(x,y,"tile"+backgroundTileID,-1));
+							}
+							else if(chars.length>2 && Character.getNumericValue(chars[0])==1 && Character.getNumericValue(chars[1])==1)
+							{
+								Tile fan = new Tile(x,y,"tile"+11,backgroundTileID);
+								String val = "";
+								int index=3;
+								for(int l=3,stop=chars.length;l<stop;l++,index++)
+								{
+									if(chars[l]=='-'){break;}
+									else{val+=chars[l];}
+								}
+								fan.setVelocity(Integer.parseInt(val));
+								val="";
+								for(int l=index+1,stop=chars.length;l<stop;l++)
+								{
+									if(chars[l]=='}'){break;}
+									else{val+=chars[l];}
+								}
+								fan.setFanHeight(Integer.parseInt(val));
+								tiles.add(fan);
 							}
 							else
 							{
@@ -106,10 +137,12 @@ public class TileMap
 		this.xSpd=xSpd;
 		this.ySpd=ySpd;
 	}
-
+	public Tile getTile(int id){return tiles.get(id);}
 	public ArrayList<Integer> getCollidableXCoords(){return coordX;}
 	public ArrayList<Integer> getCollidableYCoords(){return coordY;}
-
+	
+	public ArrayList<Integer> getFanIDs(){return fanIDs;}
+	
 	public ArrayList<Integer> getFanXCoords(){return fanX;}
 	public ArrayList<Integer> getFanYCoords(){return fanY;}
 
@@ -119,6 +152,7 @@ public class TileMap
 		coordY = new ArrayList<Integer>();
 		fanX = new ArrayList<Integer>();
 		fanY = new ArrayList<Integer>();
+		fanIDs = new ArrayList<Integer>();
 		int xDiffs=this.x;
 		this.x=x;
 		xDiffs-=this.x;
@@ -130,8 +164,17 @@ public class TileMap
 		for(int i=0,stop=tiles.size();i<stop;i++)
 		{
 			tiles.get(i).update(xDiffs,yDiffs);
-			if(tiles.get(i).isCollidable()){coordX.add((int)tiles.get(i).getX()); coordY.add((int)tiles.get(i).getY());}
-			else if(tiles.get(i).isFan()){fanX.add((int) tiles.get(i).getX()); fanY.add((int) tiles.get(i).getY());}
+			if(tiles.get(i).isCollidable())
+			{
+				coordX.add((int)tiles.get(i).getX()); 
+				coordY.add((int)tiles.get(i).getY());
+			}
+			else if(tiles.get(i).isFan())
+			{
+				fanX.add((int) tiles.get(i).getX()); 
+				fanY.add((int) tiles.get(i).getY()); 
+				fanIDs.add(i);
+			}
 		}
 	}
 	public void render()
