@@ -70,7 +70,7 @@ public class Player
 		prevX = x;
 		prevY = y;
 		if(colH && !colV){y+=ySpd;}
-		else if(colV && !colH){x+=xSpd; if(ySpd<0){jumping=false; ySpd=0;}}
+		else if(colV && !colH){x+=xSpd; if(ySpd<0){jumping=false; ySpd++;}}
 		else if(colV && colH)
 		{
 			if(ySpd<0){jumping=false;}
@@ -81,7 +81,7 @@ public class Player
 			x+=xSpd;
 			y+=ySpd;
 		}
-		if(ySpd>=-jumpSpeed && !skipFall){skipFall=true; ySpd-=gravity;}
+		if(ySpd>=-(jumpSpeed*2) && !skipFall){skipFall=true; ySpd-=gravity;}
 		else if(skipFall){skipFall=false;}
 		if(ySpd<-1 && !inAir && !falling)
 		{
