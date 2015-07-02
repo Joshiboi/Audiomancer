@@ -13,7 +13,7 @@ public class MasterController extends JPanel implements KeyListener
 	private static final long serialVersionUID = -6281093899078909779L;
 	private Scrollbar verticalScrollbar;
 	private Scrollbar horizontalScrollbar;
-	
+
 	private Overlay overlay;
 	private TileManager tm;
 	private boolean loading, saving;
@@ -58,7 +58,7 @@ public class MasterController extends JPanel implements KeyListener
 				overlay.resetSelection();
 			}
 		}
-		
+
 		if(!loading && !saving && !verticalScrollbar.isSelected() && !horizontalScrollbar.isSelected() && tm.getTiles().size()>0)
 		{
 			tm.update();
@@ -77,25 +77,25 @@ public class MasterController extends JPanel implements KeyListener
 		if(tm.getTiles().size()>0)
 		{
 			verticalScrollbar.update();
-			if(verticalScrollbar.isSelected() && !tm.isTileSelected() || verticalScrollbar.isKeyVert())
+			if(verticalScrollbar.isSelected() && !tm.isTileSelected() || verticalScrollbar.isKeyboardInput())
 			{
 				//System.out.println("vert bar selected: "+verticalScrollbar.isSelected()+", "+verticalScrollbar.isKeyVert());
-				tm.updateVert((int)verticalScrollbar.getDiffs(), verticalScrollbar.isAtBottom(), verticalScrollbar.isAtTop());
-				
+				tm.updateVert((int)verticalScrollbar.getDisplacement());
+
 			}
 			horizontalScrollbar.update();
-			if(horizontalScrollbar.isSelected() && !tm.isTileSelected() || horizontalScrollbar.isKeyHoriz())
+			if(horizontalScrollbar.isSelected() && !tm.isTileSelected() || horizontalScrollbar.isKeyboardInput())
 			{
 				//System.out.println("horiz bar selected: "+horizontalScrollbar.isSelected()+ ", "+horizontalScrollbar.isKeyHoriz());
-				tm.updateHoriz((int)horizontalScrollbar.getDiffs(),horizontalScrollbar.isAtLeft(), horizontalScrollbar.isAtRight());
-				
+				tm.updateHoriz((int)horizontalScrollbar.getDisplacement());
+
 			}
 		}
 	}
 	public void initScrollBars()
 	{
-		verticalScrollbar = new Scrollbar(mapWidth, mapHeight, width, height, 32,true);
-		horizontalScrollbar = new Scrollbar(mapWidth, mapHeight, width, height, 32,false);
+		verticalScrollbar = new Scrollbar(mapWidth*32, mapHeight*32, width, height, 64, height-64, true);
+		horizontalScrollbar = new Scrollbar(mapWidth*32, mapHeight*32, width, height, 32, width-64, false);
 	}
 	public ArrayList<Tile> getTiles(){return tm.getTiles();}
 	public void setLoading(boolean i, boolean spaces){tm.setLoading(i,spaces);}
@@ -103,8 +103,8 @@ public class MasterController extends JPanel implements KeyListener
 	public void setDragging(boolean i){tm.setDragging(i);}
 	public boolean isLoading(){return loading;}
 	public boolean isSaving(){return saving;}
-	
-	
+
+
 	//----------mouse listeners----------\\
 	public void mouseDragged(MouseEvent e)
 	{
@@ -112,10 +112,7 @@ public class MasterController extends JPanel implements KeyListener
 		{
 			if(!loading && !updating && !saving && !verticalScrollbar.isSelected() && !horizontalScrollbar.isSelected())
 			{
-				for(int i=0,stop=overlay.getTiles().size();i<stop;i++)
-				{
-					overlay.getTiles().get(i).mouseDragged(e);
-				}
+				overlay.mouseDragged(e);
 			}
 			if(!tm.isTileSelected())
 			{
@@ -131,10 +128,21 @@ public class MasterController extends JPanel implements KeyListener
 			}
 		}
 	}
+	public void mouseClicked(MouseEvent e)
+	{	
+		if(!loading && !updating && !saving && !verticalScrollbar.isSelected() && !horizontalScrollbar.isSelected())
+		{
+			overlay.mouseClicked(e);
+		}
+	}
 	public void mouseEntered(MouseEvent e){}
 	public void mouseExited(MouseEvent e){}
 	public void mousePressed(MouseEvent e)
 	{
+		if(!loading && !updating && !saving && !verticalScrollbar.isSelected() && !horizontalScrollbar.isSelected())
+		{
+			overlay.mousePressed(e);
+		}
 		if(!updating && tm.getTiles().size()>0)
 		{
 			for(int i=0;i<tm.getTiles().size();i++)
@@ -145,6 +153,10 @@ public class MasterController extends JPanel implements KeyListener
 	}
 	public void mouseReleased(MouseEvent e)
 	{
+		if(!loading && !updating && !saving && !verticalScrollbar.isSelected() && !horizontalScrollbar.isSelected())
+		{
+			overlay.mouseReleased(e);
+		}
 		if(!updating && !loading && !saving && !verticalScrollbar.isSelected() && !horizontalScrollbar.isSelected() && tm.getTiles().size()>0)
 		{
 			for(int i=0;i<tm.getTiles().size();i++)
@@ -167,7 +179,7 @@ public class MasterController extends JPanel implements KeyListener
 			{
 				if(tm.getTiles().get(i)!=null){tm.getTiles().get(i).mouseMoved(e);}
 			}
-			
+
 		}
 	}
 	public void keyPressed(KeyEvent e) 
