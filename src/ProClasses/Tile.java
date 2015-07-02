@@ -22,6 +22,8 @@ public class Tile
 	private int maxY;
 	private boolean collidable;
 	private boolean fan;
+	private int velocity;
+	private int fanHeight;
 	
 	public Tile(int _x, int _y, String _URL, int backID)
 	{
@@ -31,8 +33,8 @@ public class Tile
 		texture = loadTexture("resources/Textures/Tiles/"+URL);
 		ID = Integer.parseInt(_URL.replace("tile","").replace(".png",""));
 		if(ID==9 || ID == 10){overlayable=true;}
-		if(ID==6 || ID==99 || ID==12 || ID==1 || ID==7){collidable=false;}
-		if(ID==6 || ID==7){fan=true;}
+		if(ID==11 || ID==99 || ID==12 || ID==0 || ID==7){collidable=false;}
+		if(ID==11){fan=true;}
 		x=_x;
 		y=-_y;
 		width = 32;
@@ -95,6 +97,8 @@ public class Tile
 	public boolean isOverlayable(){return overlayable;}
 	public boolean isCollidable() {return collidable;}
 	public boolean isFan(){return fan;}
+	public int getVelocity(){return velocity;}
+	public int getFanHeight(){return fanHeight;}
 	
 	public void setFan(boolean i){fan=i;}
 	public void setCollidable(boolean collidable) {this.collidable = collidable;}
@@ -107,4 +111,6 @@ public class Tile
 	public void setSaved(boolean i){saved=i;}
 	public void setBackgroundTileID(int i){backgroundTileID=i;}
 	public void setOverlayable(boolean i){overlayable=i;}
+	public void setFanHeight(int i){fanHeight=i;}
+	public void setVelocity(int i){velocity=i;}
 }
