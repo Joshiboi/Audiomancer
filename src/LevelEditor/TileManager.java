@@ -355,7 +355,7 @@ public class TileManager
 		{
 
 			BufferedReader s = new BufferedReader(new FileReader("resources/Editor/levels/maps/"+fileName));
-			//System.out.println(s.toString());
+			System.out.println(fileName);
 			//BufferedReader s = new BufferedReader(new FileReader("bin/openGLTests/main/editor/resources/Editor/levels/maps/"+fileName));
 			mapWidth = Integer.parseInt(s.readLine());
 			mapHeight = Integer.parseInt(s.readLine());
@@ -452,118 +452,20 @@ public class TileManager
 		catch (Exception e){e.printStackTrace();}
 		loading=false;
 	}
-	public void updateHoriz(int x, boolean left, boolean right)
+	public void updateHoriz(int x)
 	{
-		int overlayWidth=initX;
-		int windowWidth = 1280-overlayWidth-32;
-		int indexMin = 0;
-		int minX = 0;
-
-		if( mapWidth*32>windowWidth)
+		for(int i=0,stop=tiles.size();i<stop;i++)
 		{
-			for(int i=0,stop=tiles.size();i<stop;i++)
-			{
-				tiles.get(i).setHighlightable(false);
-				tiles.get(i).setX((int)tiles.get(i).getX()-x);
-				if((int)tiles.get(i).getX()<minX){minX = (int) tiles.get(i).getX(); indexMin = i;}
-			}
-			rightMap-=x;
-
-
-			//----------boundary check----------\\
-			if(right && rightMap>windowWidth)
-			{
-				int diffs = rightMap-windowWidth;
-				//System.out.println(diffs);
-				for(int i=0, stop=tiles.size();i<stop;i++)
-				{
-					tiles.get(i).setX(tiles.get(i).getX() - diffs);
-				}
-				rightMap = windowWidth;
-			}
-			else if(right && rightMap<windowWidth)
-			{
-				int diffs = windowWidth-rightMap;
-				for(int i=0, stop=tiles.size();i<stop;i++)
-				{
-					tiles.get(i).setX(tiles.get(i).getX() + diffs);
-				}
-				rightMap = windowWidth;
-			}
-			else if(left && tiles.get(indexMin).getX()>overlayWidth)
-			{
-				int diffs = (int)tiles.get(indexMin).getX()-overlayWidth;
-				for(int i=0,stop=tiles.size();i<stop;i++)
-				{
-					tiles.get(i).setX(tiles.get(i).getX() - diffs);
-				}
-				rightMap = mapWidth*32;
-			}
-			else if(left && tiles.get(indexMin).getX()<overlayWidth)
-			{
-				int diffs = overlayWidth-(int)tiles.get(indexMin).getX();
-				for(int i=0,stop=tiles.size();i<stop;i++)
-				{
-					tiles.get(i).setX(tiles.get(i).getX() + diffs);
-				}
-				rightMap = mapWidth*32;
-			}
+			tiles.get(i).setHighlightable(false);
+			tiles.get(i).setX((int)tiles.get(i).getOrigX()-x);
 		}
 	}
-	public void updateVert(int y, boolean bot, boolean top)
+	public void updateVert(int y)
 	{
-		int indexMin = 0;
-		int minY = 0;
-		int overlayHeight=32;
-		int windowHeight=720-overlayHeight-32;
-		if(mapHeight*32>windowHeight)
+		for(int i=0,stop=tiles.size();i<stop;i++)
 		{
-			for(int i=0,stop=tiles.size();i<stop;i++)
-			{
-				tiles.get(i).setHighlightable(false);
-				tiles.get(i).setY((int)tiles.get(i).getY()-y);
-				if((int)tiles.get(i).getY()<minY){minY = (int) tiles.get(i).getY(); indexMin = i;}
-			}
-			botMap-=y;
-
-
-			//----------boundary check----------\\
-			if(top && tiles.get(indexMin).getY()>overlayHeight)
-			{
-				int diffs = (int)(tiles.get(indexMin).getY())-overlayHeight;
-				for(int i=0,stop=tiles.size();i<stop;i++)
-				{
-					tiles.get(i).setY(tiles.get(i).getY() - diffs);
-				}
-				botMap = mapHeight*32;
-			}
-			else if(top && tiles.get(indexMin).getY()<overlayHeight)
-			{
-				int diffs = (int)(overlayHeight-tiles.get(indexMin).getY());
-				for(int i=0,stop=tiles.size();i<stop;i++)
-				{
-					tiles.get(i).setY(tiles.get(i).getY() + diffs);
-				}
-				botMap = mapHeight*32;
-			}
-			else if(bot && botMap>windowHeight)
-			{
-				int diffs = botMap-windowHeight;
-				for(int i=0,stop=tiles.size();i<stop;i++)
-				{
-					tiles.get(i).setY(tiles.get(i).getY() - diffs);
-				}
-				botMap = windowHeight;
-			}
-			else if(bot && botMap<windowHeight)
-			{
-				int diffs = windowHeight-botMap;
-				for(int i=0,stop=tiles.size();i<stop;i++)
-				{
-					tiles.get(i).setY(tiles.get(i).getY() + diffs);
-				}
-				botMap = windowHeight;
-			}
+			tiles.get(i).setHighlightable(false);
+			tiles.get(i).setY((int)tiles.get(i).getOrigY()-y);
 		}
 	}
 
