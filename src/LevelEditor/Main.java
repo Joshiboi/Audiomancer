@@ -5,6 +5,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 
@@ -20,7 +21,7 @@ public class Main extends JPanel implements Runnable, KeyListener
 	private Thread thread;
 	private BufferedImage image;
 	private Graphics2D g;
-
+	private TAdapter inputListener;
 	private MasterController mc;
 	private boolean loadSpaces=false;
 	private boolean ctrlPressed=false;
@@ -54,7 +55,9 @@ public class Main extends JPanel implements Runnable, KeyListener
 		g = (Graphics2D) image.getGraphics();
 		mc = new MasterController(width, height, mapWidth, mapHeight);
 		mc.init();
-		addMouseMotionListener(new TAdapter());
+		inputListener = new TAdapter();
+		addMouseMotionListener(inputListener);
+		addMouseListener(inputListener);
 		running=true;
 	}
 	public void run() 
@@ -178,13 +181,15 @@ public class Main extends JPanel implements Runnable, KeyListener
 		frame.setSize(width+16,height+38);
 		frame.setVisible(true);
 	}
-	class TAdapter extends MouseAdapter implements MouseMotionListener
+	class TAdapter extends MouseAdapter
 	{
+		public void mouseClicked(MouseEvent e){if(mc!=null){mc.mouseClicked(e);}}
+		public void mousePressed(MouseEvent e){if(mc!=null){mc.mousePressed(e);}}
+		public void mouseReleased(MouseEvent e){if(mc!=null){mc.mouseReleased(e);}}
 		public void mouseDragged(MouseEvent e)
 		{
 			if(mc!=null){mc.mouseDragged(e);}
 		}
-		public void mouseEntered(MouseEvent e){}
 		public void mouseExited(MouseEvent e){}
 		public void mouseMoved(MouseEvent e)
 		{
