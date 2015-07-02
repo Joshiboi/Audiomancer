@@ -29,6 +29,7 @@ public class Tile implements MouseListener, MouseMotionListener
 	private int velocity;
 	private int fanHeight;
 	private boolean fan,vals;
+	private final int origX, origY;
 	public Tile(int _x, int _y, String _URL, int backID, int _maxX, int _maxY)
 	{
 		backgroundTileID=backID;
@@ -43,8 +44,8 @@ public class Tile implements MouseListener, MouseMotionListener
 		ID = Integer.parseInt(temp2);
 		if(ID==9 || ID == 10){overlayable=true;}
 		if(ID == 11){fan=true;}
-		x=_x;
-		y=_y;
+		x=origX=_x;
+		y=origY=_y;
 		maxX = _maxX;
 		maxY = _maxY;
 		
@@ -169,6 +170,8 @@ public class Tile implements MouseListener, MouseMotionListener
 	public boolean receivedVals(){return vals;}
 	public int getFanHeight(){return fanHeight;}
 	public int getVelocity(){return velocity;}
+	public int getOrigX(){return origX;}
+	public int getOrigY(){return origY;}
 	
 	
 	public void setClicked(boolean clicked) {this.clicked = clicked;}
